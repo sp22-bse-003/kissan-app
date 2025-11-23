@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# Admin Portal Setup Script
+# This script will guide you through setting up the Products and Knowledge Hub CRUD features
+
+echo "=================================================="
+echo "Kissan Admin Portal - CRUD Setup"
+echo "=================================================="
+echo ""
+
+ADMIN_DIR="/Users/ammarhamza/Documents/flutter dev/Code/kissan-admin"
+
+# Check if admin portal directory exists
+if [ ! -d "$ADMIN_DIR" ]; then
+    echo "❌ Admin portal directory not found at: $ADMIN_DIR"
+    echo "Please ensure the admin portal is created first."
+    exit 1
+fi
+
+echo "✓ Admin portal directory found"
+echo ""
+
+# Navigate to admin portal
+cd "$ADMIN_DIR" || exit
+
+echo "📋 Setup Steps:"
+echo ""
+echo "1. Copy the Products.jsx code from ADMIN_PORTAL_UPDATES.md"
+echo "   Location: src/pages/Products.jsx"
+echo ""
+echo "2. Create Products.css in src/pages/"
+echo ""
+echo "3. Create KnowledgeHub.jsx in src/pages/"
+echo ""
+echo "4. Create KnowledgeHub.css in src/pages/"
+echo ""
+echo "5. Update App.jsx to add KnowledgeHub route"
+echo "   Add: import KnowledgeHub from './pages/KnowledgeHub';"
+echo "   Add route: <Route path=\"/knowledge-hub\" element={<KnowledgeHub />} />"
+echo ""
+echo "6. Update Layout.jsx to add Knowledge Hub navigation"
+echo "   Add BookOpen to lucide-react imports"
+echo "   Add navigation item for Knowledge Hub"
+echo ""
+
+echo "=================================================="
+echo "Quick Commands:"
+echo "=================================================="
+echo ""
+echo "# Navigate to admin portal:"
+echo "cd '$ADMIN_DIR'"
+echo ""
+echo "# Install dependencies (if not done):"
+echo "npm install"
+echo ""
+echo "# Start dev server:"
+echo "npm run dev"
+echo ""
+echo "# Open in browser:"
+echo "open http://localhost:3000"
+echo ""
+
+echo "=================================================="
+echo "Testing Checklist:"
+echo "=================================================="
+echo ""
+echo "Products CRUD:"
+echo "  [ ] View products list"
+echo "  [ ] Search products"
+echo "  [ ] Filter by category"
+echo "  [ ] Add new product with image"
+echo "  [ ] Edit existing product"
+echo "  [ ] Delete product"
+echo "  [ ] Verify in Flutter app"
+echo ""
+echo "Knowledge Hub CRUD:"
+echo "  [ ] View articles list"
+echo "  [ ] Search articles"
+echo "  [ ] Add new article with image"
+echo "  [ ] Edit existing article"
+echo "  [ ] Delete article"
+echo "  [ ] Verify in Flutter app"
+echo ""
+
+echo "=================================================="
+echo "Files Reference:"
+echo "=================================================="
+echo ""
+echo "All code is documented in:"
+echo "  /Users/ammarhamza/Documents/flutter dev/Code/kissan/ADMIN_PORTAL_UPDATES.md"
+echo ""
+echo "Flutter changes completed:"
+echo "  ✓ Article model updated (createdAt, updatedAt)"
+echo "  ✓ ArticleRepository updated (add, update, delete)"
+echo "  ✓ FirestoreArticleRepository implemented"
+echo "  ✓ LocalArticleRepository updated"
+echo ""
+
+echo "=================================================="
+echo "Need Help?"
+echo "=================================================="
+echo ""
+echo "Open the documentation file:"
+echo "code '$PWD/../kissan/ADMIN_PORTAL_UPDATES.md'"
+echo ""
+echo "Or view in terminal:"
+echo "cat '$PWD/../kissan/ADMIN_PORTAL_UPDATES.md'"
+echo ""
+
+echo "🚀 Ready to implement! Follow the steps above."
+echo ""

@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "gen-l10n",
+			"type": "shell",
+			"command": "flutter gen-l10n",
+			"isBackground": false,
+			"problemMatcher": [
+				"$dart-json"
+			],
+			"group": "build"
+		}
+	]
+}
