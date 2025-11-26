@@ -47,37 +47,71 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: Text(
-          AppLocalizations.of(context)!.appTitle,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.green,
-          ),
+        leading: Builder(
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu, color: Colors.white),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              ),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.eco, color: Colors.white, size: 28),
+            SizedBox(width: 8),
+            Text(
+              'KISSAN',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1.0),
-          child: Divider(color: Colors.grey, thickness: 1.0, height: 1.0),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00C853), Color(0xFF00E676)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+            onPressed: () {},
+          ),
+        ],
       ),
       drawer: const CustomDrawer(),
       body: _screens[_selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: const Border(top: BorderSide(color: Colors.grey, width: 0.5)),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
           borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(16),
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
         ),
         child: ClipRRect(
           borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(16),
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
           child: SizedBox(
             height: 70,
@@ -86,8 +120,8 @@ class _MainNavigationState extends State<MainNavigation> {
               backgroundColor: Colors.white,
               type: BottomNavigationBarType.fixed,
               currentIndex: _selectedIndex,
-              selectedItemColor: Colors.green,
-              unselectedItemColor: Colors.black,
+              selectedItemColor: const Color(0xFF00C853),
+              unselectedItemColor: Colors.grey,
               onTap: _onItemTapped,
               selectedFontSize: 14,
               unselectedFontSize: 13,

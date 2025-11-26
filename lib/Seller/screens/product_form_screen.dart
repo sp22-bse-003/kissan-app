@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:kissan/core/models/product.dart';
 import 'package:kissan/core/services/image_upload_service.dart';
@@ -35,7 +36,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     {'name': 'Chemicals', 'emoji': '⚗️'},
   ];
 
-  File? _imageFile;
+  XFile? _imageFile;
   String? _imageUrl;
   bool _isLoading = false;
   double _uploadProgress = 0.0;
@@ -94,7 +95,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   );
                   if (pickedFile != null) {
                     setState(() {
-                      _imageFile = File(pickedFile.path);
+                      _imageFile = pickedFile;
                       _imageUrl = null;
                     });
                   }
@@ -110,7 +111,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   );
                   if (pickedFile != null) {
                     setState(() {
-                      _imageFile = File(pickedFile.path);
+                      _imageFile = pickedFile;
                       _imageUrl = null;
                     });
                   }
@@ -141,7 +142,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             widget.product?.id ??
             'product_${DateTime.now().millisecondsSinceEpoch}';
 
-        finalImageUrl = await _imageUploadService.uploadProductImage(
+        finalImageUrl = await _imageUploadService.uploadProductImageFromXFile(
           _imageFile!,
           productId,
           onProgress: (progress) {
@@ -383,12 +384,28 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 borderRadius: BorderRadius.circular(12),
                 child:
                     _imageFile != null
-                        ? Image.file(
-                          _imageFile!,
-                          width: double.infinity,
-                          height: 200,
-                          fit: BoxFit.cover,
-                        )
+                        ? FutureBuilder<Uint8List>(
+                            future: _imageFile!.readAsBytes(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                return Image.memory(
+                                  snapshot.data!,
+                                  width: double.infinity,
+                                  height: 200,
+                                  fit: BoxFit.cover,
+                                );
+                              } else {
+                                return Container(
+                                  width: double.infinity,
+                                  height: 200,
+                                  color: Colors.grey[200],
+                                  child: const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              }
+                            },
+                          )
                         : _imageUrl!.startsWith('http')
                         ? Image.network(
                           _imageUrl!,

@@ -40,12 +40,12 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: _buildSearchBar(),
             ),
           ),

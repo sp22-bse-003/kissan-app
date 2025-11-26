@@ -192,247 +192,292 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       drawer: CustomDrawer(imagePath: sharedProfileImagePath),
       body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 40),
-
-              MouseRegion(
-                onEnter: (_) => setState(() => _isHoveringProfileImage = true),
-                onExit: (_) => setState(() => _isHoveringProfileImage = false),
-                child: GestureDetector(
-                  onTap: _showPhotoOptions,
-                  onTapDown:
-                      (_) => setState(() => _isHoveringProfileImage = true),
-                  onTapUp:
-                      (_) => setState(() => _isHoveringProfileImage = false),
-                  onTapCancel:
-                      () => setState(() => _isHoveringProfileImage = false),
-                  child: Stack(
-                    alignment: Alignment.center,
+        child: Column(
+          children: [
+            // Gradient Header
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF00C853), Color(0xFF00E676)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+                  child: Column(
                     children: [
-                      Container(
-                        width: 130,
-                        height: 130,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF4CAF50),
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              spreadRadius: 1,
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child:
-                              _isUploadingImage
-                                  ? Container(
-                                    width: 130,
-                                    height: 130,
-                                    color: Colors.grey[200],
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Color(0xFF4CAF50),
-                                            ),
-                                      ),
+                      const SizedBox(height: 20),
+
+                      MouseRegion(
+                        onEnter:
+                            (_) =>
+                                setState(() => _isHoveringProfileImage = true),
+                        onExit:
+                            (_) =>
+                                setState(() => _isHoveringProfileImage = false),
+                        child: GestureDetector(
+                          onTap: _showPhotoOptions,
+                          onTapDown:
+                              (_) => setState(
+                                () => _isHoveringProfileImage = true,
+                              ),
+                          onTapUp:
+                              (_) => setState(
+                                () => _isHoveringProfileImage = false,
+                              ),
+                          onTapCancel:
+                              () => setState(
+                                () => _isHoveringProfileImage = false,
+                              ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                width: 130,
+                                height: 130,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(0xFF4CAF50),
+                                    width: 3,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 5),
                                     ),
-                                  )
-                                  : _selectedImagePath != null
-                                  ? (_selectedImagePath!.startsWith('http')
-                                      ? Image.network(
-                                        _selectedImagePath!,
-                                        width: 130,
-                                        height: 130,
-                                        fit: BoxFit.cover,
-                                        loadingBuilder: (
-                                          context,
-                                          child,
-                                          loadingProgress,
-                                        ) {
-                                          if (loadingProgress == null) {
-                                            return child;
-                                          }
-                                          return Container(
+                                  ],
+                                ),
+                                child: ClipOval(
+                                  child:
+                                      _isUploadingImage
+                                          ? Container(
                                             width: 130,
                                             height: 130,
                                             color: Colors.grey[200],
-                                            child: Center(
+                                            child: const Center(
                                               child: CircularProgressIndicator(
-                                                value:
-                                                    loadingProgress
-                                                                .expectedTotalBytes !=
-                                                            null
-                                                        ? loadingProgress
-                                                                .cumulativeBytesLoaded /
-                                                            loadingProgress
-                                                                .expectedTotalBytes!
-                                                        : null,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Color(0xFF4CAF50)),
                                               ),
                                             ),
-                                          );
-                                        },
-                                        errorBuilder: (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) {
-                                          return Container(
-                                            color: Colors.grey[200],
-                                            child: Icon(
-                                              Icons.person,
-                                              size: 70,
-                                              color: Colors.grey[400],
-                                            ),
-                                          );
-                                        },
-                                      )
-                                      : Image.file(
-                                        File(_selectedImagePath!),
-                                        width: 130,
-                                        height: 130,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) {
-                                          return Container(
-                                            color: Colors.grey[200],
-                                            child: Icon(
-                                              Icons.person,
-                                              size: 70,
-                                              color: Colors.grey[400],
-                                            ),
-                                          );
-                                        },
-                                      ))
-                                  : Image.asset(
-                                    'assets/images/Kissan.png',
-                                    width: 130,
-                                    height: 130,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Colors.grey[200],
-                                        child: Icon(
-                                          Icons.person,
-                                          size: 70,
-                                          color: Colors.grey[400],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                        ),
-                      ),
-                      if (_isHoveringProfileImage)
-                        Container(
-                          width: 130,
-                          height: 130,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.black.withOpacity(0.5),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Change Photo',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                          )
+                                          : _selectedImagePath != null
+                                          ? (_selectedImagePath!.startsWith(
+                                                'http',
+                                              )
+                                              ? Image.network(
+                                                _selectedImagePath!,
+                                                width: 130,
+                                                height: 130,
+                                                fit: BoxFit.cover,
+                                                loadingBuilder: (
+                                                  context,
+                                                  child,
+                                                  loadingProgress,
+                                                ) {
+                                                  if (loadingProgress == null) {
+                                                    return child;
+                                                  }
+                                                  return Container(
+                                                    width: 130,
+                                                    height: 130,
+                                                    color: Colors.grey[200],
+                                                    child: Center(
+                                                      child: CircularProgressIndicator(
+                                                        value:
+                                                            loadingProgress
+                                                                        .expectedTotalBytes !=
+                                                                    null
+                                                                ? loadingProgress
+                                                                        .cumulativeBytesLoaded /
+                                                                    loadingProgress
+                                                                        .expectedTotalBytes!
+                                                                : null,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                                errorBuilder: (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) {
+                                                  return Container(
+                                                    color: Colors.grey[200],
+                                                    child: Icon(
+                                                      Icons.person,
+                                                      size: 70,
+                                                      color: Colors.grey[400],
+                                                    ),
+                                                  );
+                                                },
+                                              )
+                                              : Image.file(
+                                                File(_selectedImagePath!),
+                                                width: 130,
+                                                height: 130,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) {
+                                                  return Container(
+                                                    color: Colors.grey[200],
+                                                    child: Icon(
+                                                      Icons.person,
+                                                      size: 70,
+                                                      color: Colors.grey[400],
+                                                    ),
+                                                  );
+                                                },
+                                              ))
+                                          : Image.asset(
+                                            'assets/images/Kissan.png',
+                                            width: 130,
+                                            height: 130,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) {
+                                              return Container(
+                                                color: Colors.grey[200],
+                                                child: Icon(
+                                                  Icons.person,
+                                                  size: 70,
+                                                  color: Colors.grey[400],
+                                                ),
+                                              );
+                                            },
+                                          ),
                                 ),
-                                textAlign: TextAlign.center,
                               ),
+                              if (_isHoveringProfileImage)
+                                Container(
+                                  width: 130,
+                                  height: 130,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.black.withOpacity(0.5),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.camera_alt,
+                                        color: Colors.white,
+                                        size: 28,
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Change Photo',
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                             ],
                           ),
                         ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Text(
+                        sellerInfo['name'] ?? 'Seller Name',
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
+            ),
 
-              const SizedBox(height: 20),
-
-              Text(
-                sellerInfo['name'] ?? 'Seller Name',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: Offset(0, 5),
+            // Profile Information Section
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildInfoRow('Email:', sellerInfo['email'] ?? ''),
-                    _buildInfoRow('Phone:', sellerInfo['phone'] ?? ''),
-                    _buildInfoRow('Address:', sellerInfo['address'] ?? ''),
-                    _buildInfoRow('Joined on:', sellerInfo['joinedOn'] ?? ''),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: 200,
-                child: ElevatedButton.icon(
-                  onPressed: _showEditInfoModal,
-                  icon: Icon(Icons.edit),
-                  label: Text('Edit Info'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    elevation: 2,
-                    textStyle: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    child: Column(
+                      children: [
+                        _buildInfoRow('Email:', sellerInfo['email'] ?? ''),
+                        _buildInfoRow('Phone:', sellerInfo['phone'] ?? ''),
+                        _buildInfoRow('Address:', sellerInfo['address'] ?? ''),
+                        _buildInfoRow(
+                          'Joined on:',
+                          sellerInfo['joinedOn'] ?? '',
+                        ),
+                      ],
                     ),
                   ),
-                ),
+
+                  const SizedBox(height: 30),
+
+                  SizedBox(
+                    width: 200,
+                    child: ElevatedButton.icon(
+                      onPressed: _showEditInfoModal,
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Edit Info'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00C853),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 2,
+                        textStyle: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

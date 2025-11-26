@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Service to handle image uploads to Firebase Storage
 class ImageUploadService {
@@ -23,7 +24,21 @@ class ImageUploadService {
   }) async {
     try {
       final ref = _storage.ref().child(path);
-      final uploadTask = ref.putFile(file);
+      UploadTask uploadTask;
+
+      // For web, use putData with bytes
+      if (kIsWeb) {
+        final bytes = await file.readAsBytes();
+        uploadTask = ref.putData(
+          bytes,
+          SettableMetadata(
+            contentType: _getContentType(file.path),
+          ),
+        );
+      } else {
+        // For mobile/desktop, use putFile
+        uploadTask = ref.putFile(file);
+      }
 
       // Listen to upload progress
       if (onProgress != null) {
@@ -48,6 +63,61 @@ class ImageUploadService {
     }
   }
 
+  /// Get content type based on file extension
+  String _getContentType(String path) {
+    final extension = path.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/jpeg';
+    }
+  }
+
+  /// Upload an XFile (cross-platform)
+  Future<String> uploadFromXFile(
+    XFile xFile,
+    String path, {
+    Function(double)? onProgress,
+  }) async {
+    try {
+      final ref = _storage.ref().child(path);
+      final bytes = await xFile.readAsBytes();
+      
+      final uploadTask = ref.putData(
+        bytes,
+        SettableMetadata(
+          contentType: _getContentType(xFile.path),
+        ),
+      );
+
+      // Listen to upload progress
+      if (onProgress != null) {
+        uploadTask.snapshotEvents.listen((taskSnapshot) {
+          final progress =
+              taskSnapshot.bytesTransferred / taskSnapshot.totalBytes;
+          onProgress(progress);
+        });
+      }
+
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error uploading XFile: $e');
+      }
+      rethrow;
+    }
+  }
+
   /// Upload an image for a product
   ///
   /// [file] - The image file to upload
@@ -64,6 +134,18 @@ class ImageUploadService {
     final extension = file.path.split('.').last;
     final path = 'products/${productId}_$timestamp.$extension';
     return uploadImage(file, path, onProgress: onProgress);
+  }
+
+  /// Upload a product image from XFile (for web)
+  Future<String> uploadProductImageFromXFile(
+    XFile xFile,
+    String productId, {
+    Function(double)? onProgress,
+  }) async {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final extension = xFile.path.split('.').last;
+    final path = 'products/${productId}_$timestamp.$extension';
+    return uploadFromXFile(xFile, path, onProgress: onProgress);
   }
 
   /// Upload a profile picture

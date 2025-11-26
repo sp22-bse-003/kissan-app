@@ -11,7 +11,8 @@ class OrdersScreen extends StatefulWidget {
   State<OrdersScreen> createState() => _OrdersScreenState();
 }
 
-class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderStateMixin {
+class _OrdersScreenState extends State<OrdersScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final List<Order> _allOrders = [];
 
@@ -30,19 +31,27 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   }
 
   List<Order> _getPendingOrders() {
-    return _allOrders.where((order) => order.overallStatus == OrderStatus.pending).toList();
+    return _allOrders
+        .where((order) => order.overallStatus == OrderStatus.pending)
+        .toList();
   }
 
   List<Order> _getOnTheWayOrders() {
-    return _allOrders.where((order) => order.overallStatus == OrderStatus.onTheWay).toList();
+    return _allOrders
+        .where((order) => order.overallStatus == OrderStatus.onTheWay)
+        .toList();
   }
 
   List<Order> _getDeliveredOrders() {
-    return _allOrders.where((order) => order.overallStatus == OrderStatus.delivered).toList();
+    return _allOrders
+        .where((order) => order.overallStatus == OrderStatus.delivered)
+        .toList();
   }
 
   List<Order> _getCancelledOrders() {
-    return _allOrders.where((order) => order.overallStatus == OrderStatus.cancelled).toList();
+    return _allOrders
+        .where((order) => order.overallStatus == OrderStatus.cancelled)
+        .toList();
   }
 
   void _simulateOrderStatusChanges() {
@@ -50,34 +59,49 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
       if (_allOrders.isNotEmpty) {
         setState(() {
           final pendingOrder = _allOrders.firstWhere(
-                (o) => o.overallStatus == OrderStatus.pending,
+            (o) => o.overallStatus == OrderStatus.pending,
             orElse: () => _allOrders.first,
           );
 
           if (pendingOrder.products.isNotEmpty) {
-            pendingOrder.updateProductStatus(pendingOrder.products[0].name, ProductStatus.accepted);
+            pendingOrder.updateProductStatus(
+              pendingOrder.products[0].name,
+              ProductStatus.accepted,
+            );
           }
           if (pendingOrder.products.length > 1) {
-            pendingOrder.updateProductStatus(pendingOrder.products[1].name, ProductStatus.rejected);
+            pendingOrder.updateProductStatus(
+              pendingOrder.products[1].name,
+              ProductStatus.rejected,
+            );
           }
-          if (pendingOrder.products.every((p) => p.status == ProductStatus.accepted)) {
+          if (pendingOrder.products.every(
+            (p) => p.status == ProductStatus.accepted,
+          )) {
             pendingOrder.overallStatus = OrderStatus.onTheWay;
-          } else if (pendingOrder.products.every((p) => p.status == ProductStatus.rejected)) {
+          } else if (pendingOrder.products.every(
+            (p) => p.status == ProductStatus.rejected,
+          )) {
             pendingOrder.overallStatus = OrderStatus.cancelled;
           } else {
             pendingOrder.overallStatus = OrderStatus.pending;
           }
 
           Future.delayed(const Duration(seconds: 10), () {
-            if (_allOrders.any((o) => o.overallStatus == OrderStatus.onTheWay)) {
+            if (_allOrders.any(
+              (o) => o.overallStatus == OrderStatus.onTheWay,
+            )) {
               setState(() {
-                _allOrders.firstWhere((o) => o.overallStatus == OrderStatus.onTheWay).overallStatus = OrderStatus.delivered;
+                _allOrders
+                    .firstWhere((o) => o.overallStatus == OrderStatus.onTheWay)
+                    .overallStatus = OrderStatus.delivered;
               });
             }
           });
 
           Future.delayed(const Duration(seconds: 7), () {
-            if (_allOrders.length > 1 && _allOrders[1].overallStatus == OrderStatus.pending) {
+            if (_allOrders.length > 1 &&
+                _allOrders[1].overallStatus == OrderStatus.pending) {
               setState(() {
                 _allOrders[1].overallStatus = OrderStatus.cancelled;
               });
@@ -85,7 +109,9 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
           });
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Simulated seller actions on an order!')),
+          const SnackBar(
+            content: Text('Simulated seller actions on an order!'),
+          ),
         );
       }
     });
@@ -124,17 +150,28 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
               children: [
                 Text(
                   'Order ID: ${order.orderId.substring(order.orderId.length - 6)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueAccent),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.blueAccent,
+                  ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Text(
                     order.overallStatus.name.toUpperCase(),
-                    style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ],
@@ -145,7 +182,10 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
               style: const TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const Divider(height: 20, thickness: 1),
-            const Text('Items in this order:', style: TextStyle(fontWeight: FontWeight.w600)),
+            const Text(
+              'Items in this order:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
             ...order.products.map((orderedProduct) {
               Color productStatusColor;
@@ -167,18 +207,32 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4.0),
-                      child: Image.asset(orderedProduct.imageUrl, width: 50, height: 50, fit: BoxFit.cover),
+                      child: Image.asset(
+                        orderedProduct.imageUrl,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(orderedProduct.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                          Text('Qty: ${orderedProduct.quantity} - Rs. ${orderedProduct.itemTotalPrice.toStringAsFixed(2)}'),
+                          Text(
+                            orderedProduct.name,
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            'Qty: ${orderedProduct.quantity} - Rs. ${orderedProduct.itemTotalPrice.toStringAsFixed(2)}',
+                          ),
                           Text(
                             'Status: ${orderedProduct.status.name.toUpperCase()}',
-                            style: TextStyle(fontSize: 12, color: productStatusColor, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: productStatusColor,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -191,14 +245,20 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Subtotal:', style: TextStyle(fontWeight: FontWeight.w500)),
+                const Text(
+                  'Subtotal:',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
                 Text('Rs. ${order.subtotal.toStringAsFixed(2)}'),
               ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Delivery Charges:', style: TextStyle(fontWeight: FontWeight.w500)),
+                const Text(
+                  'Delivery Charges:',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
                 Text('Rs. ${order.deliveryCharges.toStringAsFixed(2)}'),
               ],
             ),
@@ -212,7 +272,11 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                 ),
                 Text(
                   'Rs. ${order.totalAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.green,
+                  ),
                 ),
               ],
             ),
@@ -221,10 +285,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
               'Delivery Address:',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
-            Text(
-              order.deliveryAddress,
-              style: const TextStyle(fontSize: 14),
-            ),
+            Text(order.deliveryAddress, style: const TextStyle(fontSize: 14)),
             if (showCancelButton && order.overallStatus == OrderStatus.pending)
               Padding(
                 padding: const EdgeInsets.only(top: 15.0),
@@ -236,7 +297,9 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
@@ -253,7 +316,9 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Cancel Order?'),
-          content: Text('Are you sure you want to cancel order ID: ${order.orderId.substring(order.orderId.length - 6)}? This action cannot be undone.'),
+          content: Text(
+            'Are you sure you want to cancel order ID: ${order.orderId.substring(order.orderId.length - 6)}? This action cannot be undone.',
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -273,11 +338,18 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                 });
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Order ${order.orderId.substring(order.orderId.length - 6)} has been cancelled.')),
+                  SnackBar(
+                    content: Text(
+                      'Order ${order.orderId.substring(order.orderId.length - 6)} has been cancelled.',
+                    ),
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Yes, Cancel', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Yes, Cancel',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
@@ -288,16 +360,34 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('My Orders'),
-        backgroundColor: Colors.white,
+        title: const Text(
+          'My Orders',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontSize: 20,
+          ),
+        ),
         centerTitle: true,
-        elevation: 1,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00C853), Color(0xFF00E676)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.green,
-          labelColor: Colors.black,
-          unselectedLabelColor: Colors.black,
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
           isScrollable: true,
           tabs: const [
             Tab(text: 'PENDING'),
@@ -339,7 +429,10 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
       padding: const EdgeInsets.all(16),
       itemCount: orders.length,
       itemBuilder: (context, index) {
-        return _buildOrderCard(orders[index], showCancelButton: showCancelButton);
+        return _buildOrderCard(
+          orders[index],
+          showCancelButton: showCancelButton,
+        );
       },
     );
   }

@@ -47,11 +47,7 @@ class CartItemWidget extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
-          BoxShadow(
-            blurRadius: 6,
-            offset: Offset(0, 2),
-            color: Colors.black12,
-          ),
+          BoxShadow(blurRadius: 6, offset: Offset(0, 2), color: Colors.black12),
         ],
       ),
       child: Stack(
@@ -78,34 +74,53 @@ class CartItemWidget extends StatelessWidget {
                   const SizedBox(width: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8.0),
-                    child: Image.asset(item.imageUrl, width: 80, height: 80, fit: BoxFit.cover),
+                    child: Image.asset(
+                      item.imageUrl,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 17)),
+                        Text(
+                          item.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text(item.brand,
-                            style: const TextStyle(fontSize: 14)),
+                        Text(item.brand, style: const TextStyle(fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text(item.weight,
-                            style: const TextStyle(fontSize: 14)),
+                        Text(item.weight, style: const TextStyle(fontSize: 14)),
                         const SizedBox(height: 10),
                         Row(
                           children: [
-                            _roundIconButton(Icons.remove, onPressed: item.quantity > 1 ? onRemove : null),
-                            const SizedBox(width: 13),
-                            Text('${item.quantity}', style: const TextStyle(fontSize: 15)),
-                            const SizedBox(width: 13),
+                            _roundIconButton(
+                              Icons.remove,
+                              onPressed: item.quantity > 1 ? onRemove : null,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              '${item.quantity}',
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                            const SizedBox(width: 10),
                             _roundIconButton(Icons.add, onPressed: onAdd),
                             const Spacer(),
-                            Text(
-                              'Rs.${item.itemTotalPrice.toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                            Flexible(
+                              child: Text(
+                                'Rs.${item.itemTotalPrice.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -149,7 +164,11 @@ class CartItemWidget extends StatelessWidget {
           border: Border.all(color: Colors.grey.shade400),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 16, color: onPressed == null ? Colors.grey : Colors.black),
+        child: Icon(
+          icon,
+          size: 16,
+          color: onPressed == null ? Colors.grey : Colors.black,
+        ),
       ),
     );
   }

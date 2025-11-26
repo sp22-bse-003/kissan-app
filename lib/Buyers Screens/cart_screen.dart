@@ -72,7 +72,10 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   double get subtotal {
-    return cartItems.fold(0.0, (sum, item) => sum + (item.isSelected ? item.itemTotalPrice : 0.0));
+    return cartItems.fold(
+      0.0,
+      (sum, item) => sum + (item.isSelected ? item.itemTotalPrice : 0.0),
+    );
   }
 
   double get totalAmount {
@@ -82,7 +85,8 @@ class _CartScreenState extends State<CartScreen> {
     return 0.0;
   }
 
-  bool get allItemsSelected => cartItems.isNotEmpty && cartItems.every((item) => item.isSelected);
+  bool get allItemsSelected =>
+      cartItems.isNotEmpty && cartItems.every((item) => item.isSelected);
 
   void _incrementQuantity(int index) {
     setState(() {
@@ -120,16 +124,22 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   void _showOrderConfirmationWithAddress(BuildContext context) {
-    final List<CartItem> selectedItems = cartItems.where((item) => item.isSelected).toList();
+    final List<CartItem> selectedItems =
+        cartItems.where((item) => item.isSelected).toList();
 
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one item to buy.')),
+        const SnackBar(
+          content: Text('Please select at least one item to buy.'),
+        ),
       );
       return;
     }
 
-    final double selectedSubtotal = selectedItems.fold(0.0, (sum, item) => sum + item.itemTotalPrice);
+    final double selectedSubtotal = selectedItems.fold(
+      0.0,
+      (sum, item) => sum + item.itemTotalPrice,
+    );
     final double selectedTotalAmount = selectedSubtotal + deliveryCharges;
 
     showModalBottomSheet(
@@ -157,7 +167,10 @@ class _CartScreenState extends State<CartScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-                const Text('Selected Items:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  'Selected Items:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 const SizedBox(height: 10),
                 ...selectedItems.map((item) {
                   return Padding(
@@ -167,15 +180,27 @@ class _CartScreenState extends State<CartScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(4.0),
-                          child: Image.asset(item.imageUrl, width: 40, height: 40, fit: BoxFit.cover),
+                          child: Image.asset(
+                            item.imageUrl,
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                              Text('Qty: ${item.quantity} - Rs. ${item.itemTotalPrice.toStringAsFixed(2)}'),
+                              Text(
+                                item.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                'Qty: ${item.quantity} - Rs. ${item.itemTotalPrice.toStringAsFixed(2)}',
+                              ),
                             ],
                           ),
                         ),
@@ -187,7 +212,10 @@ class _CartScreenState extends State<CartScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Subtotal:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Subtotal:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Text('Rs. ${selectedSubtotal.toStringAsFixed(2)}'),
                   ],
                 ),
@@ -195,7 +223,10 @@ class _CartScreenState extends State<CartScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Delivery Charges:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Delivery Charges:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Text('Rs. ${deliveryCharges.toStringAsFixed(2)}'),
                   ],
                 ),
@@ -205,11 +236,18 @@ class _CartScreenState extends State<CartScreen> {
                   children: [
                     const Text(
                       'Total Amount:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                     Text(
                       'Rs. ${selectedTotalAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.green,
+                      ),
                     ),
                   ],
                 ),
@@ -234,7 +272,9 @@ class _CartScreenState extends State<CartScreen> {
                     onPressed: () {
                       if (_addressController.text.trim().isEmpty) {
                         ScaffoldMessenger.of(sheetContext).showSnackBar(
-                          const SnackBar(content: Text('Please enter a delivery address.')),
+                          const SnackBar(
+                            content: Text('Please enter a delivery address.'),
+                          ),
                         );
                         return;
                       }
@@ -249,7 +289,9 @@ class _CartScreenState extends State<CartScreen> {
 
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => OrdersScreen(initialOrders: [newOrder]),
+                          builder:
+                              (context) =>
+                                  OrdersScreen(initialOrders: [newOrder]),
                         ),
                       );
 
@@ -259,7 +301,11 @@ class _CartScreenState extends State<CartScreen> {
                       });
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Order Confirmed and Selected Items Moved!')),
+                        const SnackBar(
+                          content: Text(
+                            'Order Confirmed and Selected Items Moved!',
+                          ),
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -272,7 +318,10 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                     child: const Text(
                       'Place Order',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -288,146 +337,214 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (cartItems.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  children: [
-                    Checkbox(
-                      value: allItemsSelected,
-                      onChanged: _toggleSelectAll,
-                      activeColor: Colors.green,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      side: BorderSide(color: Colors.grey.shade400, width: 1.5),
-                    ),
-                    const Text('Select All', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  ],
-                ),
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text(
+          'My Cart',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontSize: 20,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00C853), Color(0xFF00E676)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.white),
+            onPressed: () {
+              // Clear cart functionality
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          if (cartItems.isNotEmpty)
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 12.0,
               ),
-            Expanded(
-              child: cartItems.isEmpty
-                  ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'Your cart is empty!',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: allItemsSelected,
+                    onChanged: _toggleSelectAll,
+                    activeColor: const Color(0xFF00C853),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Add some products to see them here.',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              )
-                  : ListView.builder(
-                controller: _internalScrollController,
-                itemCount: cartItems.length,
-                padding: const EdgeInsets.all(16),
-                itemBuilder: (context, index) {
-                  return CartItemWidget(
-                    item: cartItems[index],
-                    onAdd: () => _incrementQuantity(index),
-                    onRemove: () => _decrementQuantity(index),
-                    onDelete: () => _deleteItem(index),
-                    onSelected: (isSelected) => _toggleItemSelection(isSelected, index),
-                  );
-                },
+                    side: BorderSide(color: Colors.grey.shade400, width: 1.5),
+                  ),
+                  const Text(
+                    'Select All',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ),
-            if (cartItems.isNotEmpty && cartItems.any((item) => item.isSelected))
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, -3),
-                    ),
-                  ],
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Subtotal (Selected):', style: TextStyle(fontSize: 16)),
-                        Text('Rs. ${subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16)),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Delivery Charges:', style: TextStyle(fontSize: 16)),
-                        Text('Rs. ${deliveryCharges.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16)),
-                      ],
-                    ),
-                    const Divider(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Total (Selected):',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        Text(
-                          'Rs. ${totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => _showOrderConfirmationWithAddress(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+          Expanded(
+            child:
+                cartItems.isEmpty
+                    ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.shopping_cart_outlined,
+                            size: 80,
+                            color: Colors.grey,
                           ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Your cart is empty!',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Add some products to see them here.',
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                      controller: _internalScrollController,
+                      itemCount: cartItems.length,
+                      padding: const EdgeInsets.all(16),
+                      itemBuilder: (context, index) {
+                        return CartItemWidget(
+                          item: cartItems[index],
+                          onAdd: () => _incrementQuantity(index),
+                          onRemove: () => _decrementQuantity(index),
+                          onDelete: () => _deleteItem(index),
+                          onSelected:
+                              (isSelected) =>
+                                  _toggleItemSelection(isSelected, index),
+                        );
+                      },
+                    ),
+          ),
+          if (cartItems.isNotEmpty && cartItems.any((item) => item.isSelected))
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: const Offset(0, -3),
+                  ),
+                ],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Subtotal (Selected):',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      Text(
+                        'Rs. ${subtotal.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Delivery Charges:',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      Text(
+                        'Rs. ${deliveryCharges.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total (Selected):',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
-                        child: const Text(
-                          'Buy Selected Items',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Rs. ${totalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed:
+                          () => _showOrderConfirmationWithAddress(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Buy Selected Items',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            if (cartItems.isNotEmpty && !cartItems.any((item) => item.isSelected))
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Select items to proceed with purchase.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                  textAlign: TextAlign.center,
-                ),
+            ),
+          if (cartItems.isNotEmpty && !cartItems.any((item) => item.isSelected))
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Select items to proceed with purchase.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                textAlign: TextAlign.center,
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

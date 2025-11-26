@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kissan/screens/congrats_screen.dart';
+import 'package:kissan/core/services/auth_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -11,9 +12,12 @@ class ResetPasswordScreen extends StatefulWidget {
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final TextEditingController newPasswordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   bool obscureNew = true;
   bool obscureConfirm = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +41,38 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               const SizedBox(height: 10),
               Text(
                 "Enter your new password and confirm it.",
-                style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[600]),
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
               ),
               const SizedBox(height: 40),
+
+              if (_errorMessage != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red[700]),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: GoogleFonts.poppins(
+                            color: Colors.red[700],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
               // New Password
               TextField(
@@ -48,7 +81,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 decoration: InputDecoration(
                   labelText: "New Password",
                   suffixIcon: IconButton(
-                    icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(
+                      obscureNew ? Icons.visibility_off : Icons.visibility,
+                    ),
                     onPressed: () => setState(() => obscureNew = !obscureNew),
                   ),
                   border: OutlineInputBorder(
@@ -65,8 +100,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 decoration: InputDecoration(
                   labelText: "Confirm Password",
                   suffixIcon: IconButton(
-                    icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => obscureConfirm = !obscureConfirm),
+                    icon: Icon(
+                      obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed:
+                        () => setState(() => obscureConfirm = !obscureConfirm),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -86,30 +124,86 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    final newPassword = newPasswordController.text;
-                    final confirmPassword = confirmPasswordController.text;
+                  onPressed:
+                      _isLoading
+                          ? null
+                          : () async {
+                            final newPassword = newPasswordController.text;
+                            final confirmPassword =
+                                confirmPasswordController.text;
 
-                    if (newPassword.isEmpty || confirmPassword.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Please fill in all fields")),
-                      );
-                    } else if (newPassword != confirmPassword) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Passwords do not match")),
-                      );
-                    } else {
-                      // TODO: Send new password to backend
-                      // ScaffoldMessenger.of(context).showSnackBar(
-                      //   const SnackBar(content: Text("Password reset successful")),
-                      // );
-                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>CongratulationsScreen())); // Go back to login
-                    }
-                  },
-                  child: Text(
-                    "Confirm",
-                    style: GoogleFonts.poppins(fontSize: 18, color: Colors.white),
-                  ),
+                            if (newPassword.isEmpty ||
+                                confirmPassword.isEmpty) {
+                              setState(() {
+                                _errorMessage = "Please fill in all fields";
+                              });
+                              return;
+                            }
+
+                            if (newPassword.length < 6) {
+                              setState(() {
+                                _errorMessage =
+                                    "Password must be at least 6 characters";
+                              });
+                              return;
+                            }
+
+                            if (newPassword != confirmPassword) {
+                              setState(() {
+                                _errorMessage = "Passwords do not match";
+                              });
+                              return;
+                            }
+
+                            setState(() {
+                              _isLoading = true;
+                              _errorMessage = null;
+                            });
+
+                            try {
+                              await AuthService.instance.updatePassword(
+                                newPassword,
+                              );
+
+                              if (mounted) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const CongratulationsScreen(),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                setState(() {
+                                  _errorMessage = e.toString().replaceAll(
+                                    'Exception: ',
+                                    '',
+                                  );
+                                  _isLoading = false;
+                                });
+                              }
+                            }
+                          },
+                  child:
+                      _isLoading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : Text(
+                            "Confirm",
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              color: Colors.white,
+                            ),
+                          ),
                 ),
               ),
             ],

@@ -65,6 +65,11 @@ class FirestoreProductRepository implements ProductRepository {
       if (kDebugMode) {
         // ignore: avoid_print
         print('fetchProducts Firestore failed: $e');
+        if (e.toString().contains('permission-denied')) {
+          print('⚠️  Firestore permission denied. Check your Firestore rules:');
+          print('   Firebase Console → Firestore → Rules');
+          print('   Make sure: allow read: if true;');
+        }
       }
       return [];
     }
