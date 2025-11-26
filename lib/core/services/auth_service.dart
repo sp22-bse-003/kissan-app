@@ -139,7 +139,7 @@ class AuthService {
     try {
       // For phone authentication, we'll use the phone as email format
       final email =
-          phoneNumber.replaceAll('+', '').replaceAll(' ', '') + '@kissan.app';
+          '${phoneNumber.replaceAll('+', '').replaceAll(' ', '')}@kissan.app';
 
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -179,7 +179,7 @@ class AuthService {
     try {
       // Convert phone to email format
       final email =
-          phoneNumber.replaceAll('+', '').replaceAll(' ', '') + '@kissan.app';
+          '${phoneNumber.replaceAll('+', '').replaceAll(' ', '')}@kissan.app';
 
       final credential = await _auth.signInWithEmailAndPassword(
         email: email,

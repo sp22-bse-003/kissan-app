@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:kissan/core/models/product.dart';
 import 'package:kissan/core/services/image_upload_service.dart';
@@ -385,27 +383,27 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 child:
                     _imageFile != null
                         ? FutureBuilder<Uint8List>(
-                            future: _imageFile!.readAsBytes(),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData) {
-                                return Image.memory(
-                                  snapshot.data!,
-                                  width: double.infinity,
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                );
-                              } else {
-                                return Container(
-                                  width: double.infinity,
-                                  height: 200,
-                                  color: Colors.grey[200],
-                                  child: const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-                              }
-                            },
-                          )
+                          future: _imageFile!.readAsBytes(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              return Image.memory(
+                                snapshot.data!,
+                                width: double.infinity,
+                                height: 200,
+                                fit: BoxFit.cover,
+                              );
+                            } else {
+                              return Container(
+                                width: double.infinity,
+                                height: 200,
+                                color: Colors.grey[200],
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+                          },
+                        )
                         : _imageUrl!.startsWith('http')
                         ? Image.network(
                           _imageUrl!,

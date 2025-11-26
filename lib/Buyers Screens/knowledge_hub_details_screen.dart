@@ -60,12 +60,7 @@ class _KnowledgeHubDetailsScreenState extends State<KnowledgeHubDetailsScreen> {
             if (imagePath != null && imagePath.isNotEmpty)
               Stack(
                 children: [
-                  Image.asset(
-                    imagePath,
-                    width: double.infinity,
-                    height: 250,
-                    fit: BoxFit.cover,
-                  ),
+                  _buildArticleImage(imagePath),
                   Positioned(top: 12, left: 12, child: _buildFavoriteButton()),
                 ],
               )
@@ -135,6 +130,70 @@ class _KnowledgeHubDetailsScreenState extends State<KnowledgeHubDetailsScreen> {
         },
         padding: EdgeInsets.zero,
       ),
+    );
+  }
+
+  Widget _buildArticleImage(String imageUrl) {
+    // If it's a Firebase Storage URL or any http URL
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return Image.network(
+        imageUrl,
+        width: double.infinity,
+        height: 250,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: double.infinity,
+            height: 250,
+            color: Colors.grey[200],
+            child: Center(
+              child: CircularProgressIndicator(
+                value:
+                    loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFF22C922),
+                ),
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('Error loading article image: $error');
+          return Container(
+            width: double.infinity,
+            height: 250,
+            color: Colors.grey[200],
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                SizedBox(height: 8),
+                Text('Image unavailable', style: TextStyle(color: Colors.grey)),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    // If it's an asset path
+    return Image.asset(
+      imageUrl,
+      width: double.infinity,
+      height: 250,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: double.infinity,
+          height: 250,
+          color: Colors.grey[200],
+          child: const Icon(Icons.article, size: 60, color: Colors.grey),
+        );
+      },
     );
   }
 }
