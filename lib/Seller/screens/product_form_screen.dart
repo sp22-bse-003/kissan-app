@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:kissan/core/models/product.dart';
 import 'package:kissan/core/services/image_upload_service.dart';

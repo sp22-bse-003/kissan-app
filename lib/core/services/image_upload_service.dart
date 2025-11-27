@@ -31,9 +31,7 @@ class ImageUploadService {
         final bytes = await file.readAsBytes();
         uploadTask = ref.putData(
           bytes,
-          SettableMetadata(
-            contentType: _getContentType(file.path),
-          ),
+          SettableMetadata(contentType: _getContentType(file.path)),
         );
       } else {
         // For mobile/desktop, use putFile
@@ -90,12 +88,10 @@ class ImageUploadService {
     try {
       final ref = _storage.ref().child(path);
       final bytes = await xFile.readAsBytes();
-      
+
       final uploadTask = ref.putData(
         bytes,
-        SettableMetadata(
-          contentType: _getContentType(xFile.path),
-        ),
+        SettableMetadata(contentType: _getContentType(xFile.path)),
       );
 
       // Listen to upload progress

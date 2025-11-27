@@ -5,7 +5,6 @@ import 'package:flutter/widgets.dart';
 import 'package:kissan/core/models/article.dart';
 import 'package:kissan/core/repositories/article_repository.dart';
 import 'package:kissan/data/local/local_article_repository.dart';
-import 'package:kissan/l10n/gen/app_localizations.dart';
 
 class FirestoreArticleRepository implements ArticleRepository {
   final FirebaseFirestore _db;
@@ -21,37 +20,14 @@ class FirestoreArticleRepository implements ArticleRepository {
     final snapshot = await _db.collection(_collection).limit(1).get();
     if (snapshot.docs.isNotEmpty) return;
 
-    final l10n = AppLocalizations.of(_context)!;
-    final seeds = [
-      Article(
-        id: '1',
-        title: l10n.articleUreaTitle,
-        image: 'assets/images/tea_field.jpg',
-        shortDescription: l10n.articleUreaShort,
-        fullDescription: l10n.articleUreaFull,
-      ),
-      Article(
-        id: '2',
-        title: l10n.articleUreaTitle,
-        image: 'assets/images/wheat_field.jpg',
-        shortDescription: l10n.articleUreaShort,
-        fullDescription: l10n.articleUreaFull,
-      ),
-      Article(
-        id: '3',
-        title: l10n.articleUreaTitle,
-        image: 'assets/images/tractor.jpg',
-        shortDescription: l10n.articleUreaShort,
-        fullDescription: l10n.articleUreaFull,
-      ),
-    ];
-
-    final batch = _db.batch();
-    for (final a in seeds) {
-      final ref = _db.collection(_collection).doc(a.id);
-      batch.set(ref, a.toMap());
+    // No auto-seeding with local assets.
+    // Articles should be added via admin portal with Firebase Storage images.
+    // This ensures all articles use proper Firebase Storage URLs.
+    if (kDebugMode) {
+      print(
+        'No articles found in Firestore. Please add articles via admin portal.',
+      );
     }
-    await batch.commit();
   }
 
   @override

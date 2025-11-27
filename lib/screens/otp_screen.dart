@@ -115,11 +115,7 @@ class _OTPScreenState extends State<OTPScreen> {
             if (mounted) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder:
-                      (context) =>
-                          SignUpScreen(phoneNumber: widget.phoneNumber),
-                ),
+                MaterialPageRoute(builder: (context) => const SignUpScreen()),
               );
             }
           } else {

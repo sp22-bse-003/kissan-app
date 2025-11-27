@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:kissan/screens/otp_screen.dart';
 import 'package:kissan/core/services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -13,29 +10,33 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
-    phoneController.dispose();
+    emailController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleSendOTP() async {
-    String phoneNumber = phoneController.text.trim();
+  Future<void> _handleSendResetEmail() async {
+    String email = emailController.text.trim();
 
-    if (phoneNumber.isEmpty) {
+    if (email.isEmpty) {
       setState(() {
-        _errorMessage = 'Please enter your phone number';
+        _errorMessage = 'Please enter your email address';
       });
       return;
     }
 
-    // Add country code if not present
-    if (!phoneNumber.startsWith('+')) {
-      phoneNumber = '+92$phoneNumber';
+    // Basic email format validation
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      setState(() {
+        _errorMessage = 'Please enter a valid email address';
+      });
+      return;
     }
 
     setState(() {
@@ -44,43 +45,89 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     });
 
     try {
-      await AuthService.instance.signInWithPhone(
-        phoneNumber: phoneNumber,
-        codeSent: (String verificationId, int? resendToken) {
-          if (mounted) {
-            setState(() => _isLoading = false);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (context) => OTPScreen(
-                      phoneNumber: phoneNumber,
-                      verificationId: verificationId,
-                      isPasswordReset: true,
-                    ),
-              ),
-            );
-          }
-        },
-        verificationFailed: (String error) {
-          if (mounted) {
-            setState(() {
-              _errorMessage = error;
-              _isLoading = false;
-            });
-          }
-        },
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          // Auto-verification completed
-          if (mounted) {
-            setState(() => _isLoading = false);
-          }
-        },
-      );
-    } catch (e) {
+      debugPrint('🔄 Attempting to send password reset email to: $email');
+      await AuthService.instance.sendPasswordResetEmail(email);
+      debugPrint('✅ Password reset email request completed');
+
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+
+        // Show success dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder:
+              (context) => AlertDialog(
+                title: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green[700]),
+                    const SizedBox(width: 10),
+                    const Text('Email Sent'),
+                  ],
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'A password reset link has been sent to:',
+                      style: GoogleFonts.poppins(fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      email,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Please check your inbox and spam folder. The link will expire in 1 hour.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close dialog
+                      Navigator.pop(context); // Go back to login
+                    },
+                    child: Text(
+                      'OK',
+                      style: GoogleFonts.poppins(
+                        color: Colors.green[700],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Password reset error: $e');
+      if (mounted) {
+        setState(() {
+          String errorMsg = e.toString().replaceAll('Exception: ', '');
+          // Make error messages more user-friendly
+          if (errorMsg.contains('user-not-found') ||
+              errorMsg.contains('No user found')) {
+            errorMsg =
+                'No account found with this email address. Please check and try again.';
+          } else if (errorMsg.contains('invalid-email')) {
+            errorMsg = 'Invalid email address format.';
+          } else if (errorMsg.contains('too-many-requests')) {
+            errorMsg =
+                'Too many attempts. Please wait a few minutes before trying again.';
+          }
+          _errorMessage = errorMsg;
           _isLoading = false;
         });
       }
@@ -118,52 +165,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                "Enter your registered mobile number to receive the OTP.",
+                "Enter your registered email to receive the password reset link.",
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   color: Colors.grey[600],
                 ),
               ),
               const SizedBox(height: 40),
-
-              // Test Phone Number Hint (Development Only)
-              if (kDebugMode)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue[200]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.bug_report, color: Colors.blue[700]),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Test Mode',
-                            style: GoogleFonts.poppins(
-                              color: Colors.blue[900],
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Use test number: 3001234567\nOTP will be: 123456',
-                        style: GoogleFonts.poppins(
-                          color: Colors.blue[700],
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
 
               if (_errorMessage != null)
                 Container(
@@ -191,16 +199,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                 ),
 
-              // Phone Number Input
+              // Email Input
               TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
                 enabled: !_isLoading,
                 decoration: InputDecoration(
-                  labelText: "Mobile Number",
-                  hintText: "3001234567",
-                  prefixText: "+92 ",
-                  prefixIcon: const Icon(Icons.phone_outlined),
+                  labelText: "Email Address",
+                  hintText: "example@email.com",
+                  prefixIcon: const Icon(Icons.email_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -208,7 +215,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               const SizedBox(height: 30),
 
-              // Send OTP Button
+              // Send Reset Email Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -219,7 +226,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: _isLoading ? null : _handleSendOTP,
+                  onPressed: _isLoading ? null : _handleSendResetEmail,
                   child:
                       _isLoading
                           ? const SizedBox(
@@ -231,7 +238,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             ),
                           )
                           : Text(
-                            "Send OTP",
+                            "Send Reset Link",
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               color: Colors.white,

@@ -4,6 +4,7 @@ import 'package:kissan/l10n/gen/app_localizations.dart';
 import 'package:kissan/screens/sign_up.dart';
 import './forgot_password.dart';
 import '../Buyers Screens/main_navigation.dart';
+import '../Seller/screens/dashboard_screen.dart';
 import 'package:kissan/core/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,22 +15,22 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
-    if (_phoneController.text.isEmpty || _passwordController.text.isEmpty) {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       setState(() {
-        _errorMessage = 'Please enter phone number and password';
+        _errorMessage = 'Please enter email and password';
       });
       return;
     }
@@ -40,21 +41,30 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      String phoneNumber = _phoneController.text.trim();
-      if (!phoneNumber.startsWith('+')) {
-        phoneNumber = '+92$phoneNumber';
-      }
-
-      await AuthService.instance.signInWithPhonePassword(
-        phoneNumber: phoneNumber,
+      final credential = await AuthService.instance.signInWithEmailPassword(
+        email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainNavigation()),
+      if (mounted && credential != null) {
+        // Get user role from Firestore
+        final userData = await AuthService.instance.getUserData(
+          credential.user!.uid,
         );
+        final role = userData?['role'] ?? 'buyer';
+
+        // Navigate based on role
+        if (role == 'seller') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainNavigation()),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -95,12 +105,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 30),
               TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.phoneNumber,
-                  prefixText: '+92 ',
-                  prefixIcon: const Icon(Icons.phone_outlined),
+                  labelText: 'Email',
+                  prefixIcon: const Icon(Icons.email_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

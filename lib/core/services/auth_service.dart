@@ -13,22 +13,6 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Test phone numbers for development (add these in Firebase Console too)
-  static const Map<String, String> testPhoneNumbers = {
-    '+923001234567': '123456',
-    '+923009876543': '654321',
-  };
-
-  // Check if phone number is a test number
-  bool isTestPhoneNumber(String phoneNumber) {
-    return testPhoneNumbers.containsKey(phoneNumber);
-  }
-
-  // Get test OTP for a test phone number
-  String? getTestOTP(String phoneNumber) {
-    return testPhoneNumbers[phoneNumber];
-  }
-
   // Get current user
   User? get currentUser => _auth.currentUser;
 
@@ -41,151 +25,17 @@ class AuthService {
   // Stream of auth state changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Sign in with phone number
-  Future<void> signInWithPhone({
-    required String phoneNumber,
-    required Function(String verificationId, int? resendToken) codeSent,
-    required Function(String error) verificationFailed,
-    required Function(PhoneAuthCredential credential) verificationCompleted,
-  }) async {
-    try {
-      debugPrint('📱 Attempting to send OTP to: $phoneNumber');
-
-      // Check if this is a test phone number
-      if (isTestPhoneNumber(phoneNumber)) {
-        debugPrint(
-          '🧪 Using test phone number - OTP: ${getTestOTP(phoneNumber)}',
-        );
-      }
-
-      await _auth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        verificationCompleted: (PhoneAuthCredential credential) {
-          debugPrint('✅ Auto-verification completed');
-          verificationCompleted(credential);
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          debugPrint('❌ Verification failed: ${e.code} - ${e.message}');
-          if (e.code == 'invalid-phone-number') {
-            verificationFailed(
-              'Invalid phone number format. Use +92XXXXXXXXXX',
-            );
-          } else if (e.code == 'too-many-requests') {
-            verificationFailed(
-              'Too many requests. Please try again later or use a test number.',
-            );
-          } else if (e.code == 'operation-not-allowed') {
-            verificationFailed(
-              'Phone authentication is not enabled. Please contact support.',
-            );
-          } else {
-            verificationFailed(_handleAuthException(e));
-          }
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          debugPrint(
-            '✅ OTP sent successfully! Verification ID: ${verificationId.substring(0, 10)}...',
-          );
-          if (isTestPhoneNumber(phoneNumber)) {
-            debugPrint(
-              '🧪 Test number detected. Use OTP: ${getTestOTP(phoneNumber)}',
-            );
-          } else {
-            debugPrint(
-              '📨 SMS sent to $phoneNumber. Please check your messages.',
-            );
-          }
-          codeSent(verificationId, resendToken);
-        },
-        timeout: const Duration(seconds: 60),
-        codeAutoRetrievalTimeout: (String verificationId) {
-          debugPrint(
-            '⏱️ Auto retrieval timeout for: ${verificationId.substring(0, 10)}...',
-          );
-        },
-      );
-    } catch (e) {
-      debugPrint('❌ Phone sign in error: $e');
-      throw 'Failed to send verification code. Please check your internet connection and try again.';
-    }
-  }
-
-  // Verify phone OTP
-  Future<UserCredential?> verifyPhoneOTP({
-    required String verificationId,
-    required String smsCode,
-  }) async {
-    try {
-      final credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
-      final userCredential = await _auth.signInWithCredential(credential);
-      debugPrint('✅ Phone verified: ${userCredential.user?.phoneNumber}');
-      return userCredential;
-    } on FirebaseAuthException catch (e) {
-      debugPrint('❌ OTP verification error: ${e.code}');
-      throw _handleAuthException(e);
-    }
-  }
-
-  // Sign up with phone and password
-  Future<UserCredential?> signUpWithPhonePassword({
-    required String phoneNumber,
-    required String password,
-    required String name,
-    String role = 'buyer',
-  }) async {
-    try {
-      // For phone authentication, we'll use the phone as email format
-      final email =
-          phoneNumber.replaceAll('+', '').replaceAll(' ', '') + '@kissan.app';
-
-      final credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // Update display name and phone number
-      await credential.user?.updateDisplayName(name);
-      await credential.user?.updatePhoneNumber(
-        PhoneAuthProvider.credential(
-          verificationId: '', // Will be set during phone verification
-          smsCode: '',
-        ),
-      );
-
-      // Create user document in Firestore
-      await _createUserDocument(
-        uid: credential.user!.uid,
-        phone: phoneNumber,
-        name: name,
-        role: role,
-      );
-
-      debugPrint('✅ User registered: ${credential.user?.phoneNumber}');
-      return credential;
-    } on FirebaseAuthException catch (e) {
-      debugPrint('❌ Sign up error: ${e.code}');
-      throw _handleAuthException(e);
-    }
-  }
-
-  // Sign in with phone and password
-  Future<UserCredential?> signInWithPhonePassword({
-    required String phoneNumber,
+  // Sign in with email and password
+  Future<UserCredential?> signInWithEmailPassword({
+    required String email,
     required String password,
   }) async {
     try {
-      // Convert phone to email format
-      final email =
-          phoneNumber.replaceAll('+', '').replaceAll(' ', '') + '@kissan.app';
-
       final credential = await _auth.signInWithEmailAndPassword(
-        email: email,
+        email: email.trim(),
         password: password,
       );
-      debugPrint('✅ User signed in: ${credential.user?.phoneNumber}');
+      debugPrint('✅ User signed in: ${credential.user?.email}');
       return credential;
     } on FirebaseAuthException catch (e) {
       debugPrint('❌ Sign in error: ${e.code} - ${e.message}');
@@ -196,23 +46,91 @@ class AuthService {
     }
   }
 
+  // Sign up with email and password
+  Future<UserCredential?> signUpWithEmailPassword({
+    required String email,
+    required String password,
+    required String name,
+    required String role,
+    String? cnic,
+    String? phone,
+    String? location,
+  }) async {
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+
+      // Update display name
+      await credential.user?.updateDisplayName(name);
+
+      // Create user document in Firestore
+      await _createUserDocument(
+        uid: credential.user!.uid,
+        email: email.trim(),
+        name: name,
+        role: role,
+        cnic: cnic,
+        phone: phone,
+        location: location,
+      );
+
+      debugPrint('✅ User registered: ${credential.user?.email}');
+      return credential;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('❌ Sign up error: ${e.code}');
+      throw _handleAuthException(e);
+    }
+  }
+
+  // Send password reset email
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      debugPrint('📧 Sending password reset email to: $email');
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      debugPrint('✅ Password reset email sent successfully to: $email');
+      debugPrint('⚠️ Note: Check spam folder if email not received');
+    } on FirebaseAuthException catch (e) {
+      debugPrint('❌ Password reset error: ${e.code} - ${e.message}');
+      throw _handleAuthException(e);
+    } catch (e) {
+      debugPrint('❌ Unexpected error sending reset email: $e');
+      throw 'Failed to send reset email. Please try again.';
+    }
+  }
+
   // Create user document in Firestore
   Future<void> _createUserDocument({
     required String uid,
-    required String phone,
+    required String email,
     required String name,
     required String role,
+    String? cnic,
+    String? phone,
+    String? location,
   }) async {
     try {
-      await _firestore.collection('users').doc(uid).set({
+      final userData = {
         'uid': uid,
-        'phone': phone,
+        'email': email,
         'name': name,
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      });
-      debugPrint('✅ User document created for: $uid');
+      };
+
+      // Add phone number for all users
+      if (phone != null) userData['phone'] = phone;
+
+      // Add seller-specific fields if role is seller
+      if (role == 'seller') {
+        if (cnic != null) userData['cnic'] = cnic;
+        if (location != null) userData['location'] = location;
+      }
+
+      await _firestore.collection('users').doc(uid).set(userData);
+      debugPrint('✅ User document created for: $uid ($role)');
     } catch (e) {
       debugPrint('❌ Error creating user document: $e');
       throw 'Failed to create user profile. Please try again.';
@@ -287,13 +205,13 @@ class AuthService {
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
-        return 'No user found with this phone number.';
+        return 'No user found with this email address.';
       case 'wrong-password':
         return 'Incorrect password. Please try again.';
       case 'email-already-in-use':
-        return 'This phone number is already registered.';
+        return 'This email is already registered.';
       case 'invalid-email':
-        return 'Invalid phone number.';
+        return 'Invalid email address.';
       case 'weak-password':
         return 'Password is too weak. Use at least 6 characters.';
       case 'user-disabled':
@@ -302,10 +220,6 @@ class AuthService {
         return 'Too many attempts. Please try again later.';
       case 'operation-not-allowed':
         return 'This sign-in method is not enabled.';
-      case 'invalid-verification-code':
-        return 'Invalid verification code. Please try again.';
-      case 'invalid-verification-id':
-        return 'Verification session expired. Please request a new code.';
       case 'requires-recent-login':
         return 'Please sign in again to perform this action.';
       default:
