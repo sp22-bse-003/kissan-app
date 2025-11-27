@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kissan/screens/sign_in.dart';
 import 'package:kissan/core/services/auth_service.dart';
 import 'package:kissan/Buyers Screens/main_navigation.dart';
+import 'package:kissan/Seller/screens/dashboard_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
-  final String? phoneNumber;
-
-  const SignUpScreen({super.key, this.phoneNumber});
+  const SignUpScreen({super.key});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -16,38 +14,67 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  // Seller-specific fields
+  final _cnicController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _locationController = TextEditingController();
+
   bool _isLoading = false;
   String? _errorMessage;
   String _selectedRole = 'buyer';
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.phoneNumber != null) {
-      _phoneController.text = widget.phoneNumber!.replaceAll('+92', '');
-    }
-  }
-
-  @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _cnicController.dispose();
+    _phoneController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
+  String? _validateCNIC(String cnic) {
+    // Pakistan CNIC format: 12345-1234567-1
+    final cnicRegex = RegExp(r'^\d{5}-\d{7}-\d{1}$');
+    if (!cnicRegex.hasMatch(cnic)) {
+      return 'Invalid CNIC format. Use: 12345-1234567-1';
+    }
+    return null;
+  }
+
   Future<void> _handleSignUp() async {
+    // Basic validation
     if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
         _phoneController.text.isEmpty ||
         _passwordController.text.isEmpty) {
       setState(() {
-        _errorMessage = 'Please fill all fields';
+        _errorMessage = 'Please fill all required fields';
       });
       return;
+    }
+
+    // Seller-specific validation
+    if (_selectedRole == 'seller') {
+      if (_cnicController.text.isEmpty || _locationController.text.isEmpty) {
+        setState(() {
+          _errorMessage = 'Please fill all seller information';
+        });
+        return;
+      }
+
+      final cnicError = _validateCNIC(_cnicController.text);
+      if (cnicError != null) {
+        setState(() {
+          _errorMessage = cnicError;
+        });
+        return;
+      }
     }
 
     if (_passwordController.text != _confirmPasswordController.text) {
@@ -70,24 +97,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     try {
-      String phoneNumber = _phoneController.text.trim();
-      if (!phoneNumber.startsWith('+')) {
-        phoneNumber = '+92$phoneNumber';
-      }
-
-      final user = await AuthService.instance.signUpWithPhonePassword(
-        phoneNumber: phoneNumber,
+      final credential = await AuthService.instance.signUpWithEmailPassword(
+        email: _emailController.text.trim(),
         password: _passwordController.text,
         name: _nameController.text,
         role: _selectedRole,
+        phone: '+92${_phoneController.text}',
+        cnic: _selectedRole == 'seller' ? _cnicController.text : null,
+        location: _selectedRole == 'seller' ? _locationController.text : null,
       );
 
-      if (user != null && mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const MainNavigation()),
-          (route) => false,
-        );
+      if (credential != null && mounted) {
+        // Navigate based on role
+        if (_selectedRole == 'seller') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          );
+        } else {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MainNavigation()),
+            (route) => false,
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -179,46 +212,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Test Phone Number Hint (Development Only)
-                if (kDebugMode)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                // Email
+                TextField(
+                  controller: _emailController,
+                  enabled: !_isLoading,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: "Email",
+                    hintText: "example@email.com",
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue[200]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.bug_report, color: Colors.blue[700]),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Test Mode',
-                              style: GoogleFonts.poppins(
-                                color: Colors.blue[900],
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Test number: 3001234567 (no SMS sent)',
-                          style: GoogleFonts.poppins(
-                            color: Colors.blue[700],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
+                ),
+                const SizedBox(height: 20),
 
-                // Phone Number
+                // Phone Number (for all users)
                 TextField(
                   controller: _phoneController,
                   enabled: !_isLoading,
@@ -297,6 +307,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // Seller-specific fields
+                if (_selectedRole == 'seller') ...[
+                  // CNIC
+                  TextField(
+                    controller: _cnicController,
+                    enabled: !_isLoading,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "CNIC",
+                      hintText: "12345-1234567-1",
+                      prefixIcon: const Icon(Icons.credit_card),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Location
+                  TextField(
+                    controller: _locationController,
+                    enabled: !_isLoading,
+                    decoration: InputDecoration(
+                      labelText: "Location",
+                      hintText: "City, Province",
+                      prefixIcon: const Icon(Icons.location_on_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
 
                 // Password
                 TextField(
