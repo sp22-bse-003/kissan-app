@@ -8,10 +8,69 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kissan/l10n/gen/app_localizations.dart';
 import 'package:kissan/localization/locale_controller.dart';
 import '../Seller/main 1.dart';
+import 'package:kissan/core/services/auth_service.dart';
 
-class CustomDrawer extends StatelessWidget {
+class CustomDrawer extends StatefulWidget {
   final String? imagePath;
   const CustomDrawer({super.key, this.imagePath});
+
+  @override
+  State<CustomDrawer> createState() => _CustomDrawerState();
+}
+
+class _CustomDrawerState extends State<CustomDrawer> {
+  final AuthService _authService = AuthService.instance;
+  Map<String, dynamic>? _userData;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final currentUser = _authService.currentUser;
+      final userId = currentUser?.uid;
+
+      if (userId != null) {
+        // Get from Firestore
+        final data = await _authService.getUserData(userId);
+
+        if (mounted) {
+          setState(() {
+            if (data != null && data.isNotEmpty) {
+              _userData = data;
+            } else {
+              // Use Firebase Auth data as fallback
+              _userData = {
+                'name': currentUser?.displayName ?? 'User',
+                'phone': currentUser?.phoneNumber ?? '',
+                'profilePicture': currentUser?.photoURL,
+              };
+            }
+            _loading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() => _loading = false);
+        }
+      }
+    } catch (e) {
+      debugPrint('Drawer load error: $e');
+      if (mounted) {
+        setState(() {
+          _userData = {
+            'name': _authService.currentUser?.displayName ?? 'User',
+            'phone': _authService.currentUser?.phoneNumber ?? '',
+          };
+          _loading = false;
+        });
+      }
+    }
+  }
 
   Future<void> _launchYouTubeVideo(String url) async {
     final Uri uri = Uri.parse(url);
@@ -76,35 +135,46 @@ class CustomDrawer extends StatelessWidget {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(50),
                             child:
-                                imagePath != null
-                                    ? Image.file(
-                                      File(imagePath!),
+                                _loading
+                                    ? Container(
                                       width: 70,
                                       height: 70,
-                                      fit: BoxFit.cover,
+                                      color: Colors.grey[300],
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 40,
+                                        color: Colors.grey[500],
+                                      ),
                                     )
-                                    : Image.asset(
-                                      'assets/images/Kissan.png',
-                                      width: 70,
-                                      height: 70,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (
-                                        context,
-                                        error,
-                                        stackTrace,
-                                      ) {
-                                        return Container(
+                                    : (_userData?['profilePicture'] != null
+                                        ? Image.network(
+                                          _userData!['profilePicture'],
                                           width: 70,
                                           height: 70,
-                                          color: Colors.grey[200],
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) {
+                                            return Container(
+                                              width: 70,
+                                              height: 70,
+                                              color: Colors.grey[300],
+                                              child: Icon(
+                                                Icons.person,
+                                                size: 40,
+                                                color: Colors.grey[500],
+                                              ),
+                                            );
+                                          },
+                                        )
+                                        : Container(
+                                          width: 70,
+                                          height: 70,
+                                          color: Colors.grey[300],
                                           child: Icon(
                                             Icons.person,
                                             size: 40,
-                                            color: Colors.grey[400],
+                                            color: Colors.grey[500],
                                           ),
-                                        );
-                                      },
-                                    ),
+                                        )),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -112,7 +182,9 @@ class CustomDrawer extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Bilal Yousaf',
+                              _loading
+                                  ? 'Loading...'
+                                  : (_userData?['name'] ?? 'User'),
                               style: GoogleFonts.poppins(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -121,7 +193,7 @@ class CustomDrawer extends StatelessWidget {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              '+92 311 5318776',
+                              _loading ? '' : (_userData?['phone'] ?? ''),
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 color: Colors.white.withOpacity(0.9),

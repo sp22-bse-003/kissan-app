@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:kissan/core/models/article.dart';
@@ -58,11 +59,31 @@ class FirestoreArticleRepository implements ArticleRepository {
     try {
       await _ensureSeeded();
 
+      // Fetch user's liked article IDs
+      final user = FirebaseAuth.instance.currentUser;
+      Set<String> likedIds = {};
+      if (user != null) {
+        final userLikesDoc =
+            await _db.collection('user_liked_articles').doc(user.uid).get();
+        if (userLikesDoc.exists) {
+          likedIds =
+              (userLikesDoc.data()?['articleIds'] as List<dynamic>?)
+                  ?.cast<String>()
+                  .toSet() ??
+              {};
+        }
+      }
+
       Query<Map<String, dynamic>> q = _db.collection(_collection);
       if (query != null && query.trim().isNotEmpty) {
         // Simple contains filter is not supported server-side without indexing; fetch client-side for PoC.
         final res = await q.get();
-        final all = res.docs.map((d) => Article.fromMap(d.data())).toList();
+        final all =
+            res.docs.map((d) {
+              final article = Article.fromMap(d.data());
+              article.isLiked = likedIds.contains(article.id);
+              return article;
+            }).toList();
         final text = query.toLowerCase();
         return all
             .where(
@@ -73,7 +94,11 @@ class FirestoreArticleRepository implements ArticleRepository {
             .toList();
       } else {
         final res = await q.get();
-        return res.docs.map((d) => Article.fromMap(d.data())).toList();
+        return res.docs.map((d) {
+          final article = Article.fromMap(d.data());
+          article.isLiked = likedIds.contains(article.id);
+          return article;
+        }).toList();
       }
     } catch (e) {
       if (kDebugMode) {
@@ -89,11 +114,59 @@ class FirestoreArticleRepository implements ArticleRepository {
   @override
   Future<void> toggleLike(String id, bool isLiked) async {
     try {
-      await _db.collection(_collection).doc(id).set({
-        'isLiked': isLiked,
-      }, SetOptions(merge: true));
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final userLikesRef = _db.collection('user_liked_articles').doc(user.uid);
+
+      if (isLiked) {
+        // Add article to liked list
+        await userLikesRef.set({
+          'articleIds': FieldValue.arrayUnion([id]),
+        }, SetOptions(merge: true));
+      } else {
+        // Remove article from liked list
+        await userLikesRef.set({
+          'articleIds': FieldValue.arrayRemove([id]),
+        }, SetOptions(merge: true));
+      }
     } catch (_) {
       // Silently ignore in this PoC; UI already updated optimistically.
+    }
+  }
+
+  @override
+  Future<List<Article>> fetchLikedArticles() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return [];
+
+      await _ensureSeeded();
+
+      // Get user's liked article IDs
+      final userLikesDoc =
+          await _db.collection('user_liked_articles').doc(user.uid).get();
+      if (!userLikesDoc.exists) return [];
+
+      final likedIds = List<String>.from(
+        userLikesDoc.data()?['articleIds'] ?? [],
+      );
+      if (likedIds.isEmpty) return [];
+
+      // Fetch all liked articles
+      final articlesSnapshot =
+          await _db
+              .collection(_collection)
+              .where(FieldPath.documentId, whereIn: likedIds)
+              .get();
+      return articlesSnapshot.docs
+          .map((d) => Article.fromMap(d.data()))
+          .toList();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Failed to fetch liked articles: $e');
+      }
+      return [];
     }
   }
 

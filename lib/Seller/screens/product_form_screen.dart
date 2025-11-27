@@ -385,27 +385,27 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 child:
                     _imageFile != null
                         ? FutureBuilder<Uint8List>(
-                            future: _imageFile!.readAsBytes(),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData) {
-                                return Image.memory(
-                                  snapshot.data!,
-                                  width: double.infinity,
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                );
-                              } else {
-                                return Container(
-                                  width: double.infinity,
-                                  height: 200,
-                                  color: Colors.grey[200],
-                                  child: const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-                              }
-                            },
-                          )
+                          future: _imageFile!.readAsBytes(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              return Image.memory(
+                                snapshot.data!,
+                                width: double.infinity,
+                                height: 200,
+                                fit: BoxFit.cover,
+                              );
+                            } else {
+                              return Container(
+                                width: double.infinity,
+                                height: 200,
+                                color: Colors.grey[200],
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+                          },
+                        )
                         : _imageUrl!.startsWith('http')
                         ? Image.network(
                           _imageUrl!,
@@ -647,7 +647,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            initialValue: _selectedCategory,
+            value: _selectedCategory,
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,

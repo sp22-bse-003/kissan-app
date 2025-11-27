@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'knowledge_hub_details_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kissan/core/di/service_locator.dart';
+import 'package:kissan/core/models/article.dart';
+import 'package:kissan/core/repositories/article_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LikedArticlesScreen extends StatefulWidget {
   const LikedArticlesScreen({super.key});
@@ -10,85 +14,100 @@ class LikedArticlesScreen extends StatefulWidget {
 }
 
 class _LikedArticlesScreenState extends State<LikedArticlesScreen> {
-  final List<Map<String, dynamic>> allArticles = [
-    {
-      'id': 1,
-      'title': 'Benefits of Urea',
-      'image': 'assets/images/tea_field.jpg',
-      'shortDescription': 'Urea is one of the most widely used nitrogen fertilizers in agriculture. It promotes rapid plant growth and enhances crop yield by providing a rich nitrogen source. Easy to apply and highly soluble, urea is suitable for various soil types.',
-      'fullDescription': 'Urea is one of the most widely used nitrogen fertilizers in agriculture. It promotes rapid plant growth and enhances crop yield by providing a rich nitrogen source. Easy to apply and highly soluble, urea is suitable for various soil types. It supports the development of green, leafy crops, especially in cereals like wheat and rice. Urea is also cost-effective, making it ideal for both small and large-scale farmers. Regular use improves soil fertility when applied correctly and in balanced amounts. However, overuse of urea can lead to soil acidification and nutrient imbalance, so proper guidance and dosage are essential. Integrating it with organic matter or other balanced fertilizers can enhance its effectiveness while protecting soil health. It also helps reduce nitrogen loss through leaching or volatilization when applied at the right time and in suitable weather conditions. Farmers practicing precision agriculture can optimize application techniques like fertigation for better efficiency. Specialized formulations of urea are available as part of "smart" fertilizers to further maximize benefits; farmers can consult agricultural experts for tailored advice.',
-      'isLiked': true,
-    },
-    {
-      'id': 2,
-      'title': 'Pest Control Strategies',
-      'image': 'assets/images/wheat_field.jpg',
-      'shortDescription': 'Effective pest control is crucial for protecting crops from damage and ensuring high yields. Integrated Pest Management (IPM) combines various methods to minimize pest populations while reducing environmental impact.',
-      'fullDescription': 'Integrated Pest Management (IPM) is a comprehensive approach to pest control that combines biological, cultural, physical, and chemical tools in a way that minimizes economic, health, and environmental risks. Key strategies include monitoring pest populations, using pest-resistant crop varieties, encouraging natural predators, practicing crop rotation, and applying pesticides only when necessary and in targeted ways. This holistic approach helps maintain ecosystem balance and reduces reliance on synthetic pesticides, leading to healthier crops and a more sustainable agricultural system.',
-      'isLiked': true,
-    },
-    {
-      'id': 3,
-      'title': 'Modern Irrigation Techniques',
-      'image': 'assets/images/tractor.jpg',
-      'shortDescription': 'Modern irrigation techniques, such as drip irrigation and sprinkler systems, offer efficient water usage for crop cultivation, minimizing water waste and maximizing resource allocation.',
-      'fullDescription': 'Modern irrigation techniques play a vital role in sustainable agriculture by optimizing water usage and improving crop yields. Drip irrigation delivers water directly to the plant roots, reducing evaporation and runoff, making it highly efficient for water-scarce regions. Sprinkler systems provide uniform water distribution over larger areas, suitable for various crops. Center pivot irrigation systems offer automated watering for extensive fields, saving labor and water. These advanced methods help farmers achieve higher productivity with less water, contributing to both economic and environmental sustainability. Proper planning and maintenance are essential for maximizing the benefits of these systems.',
-      'isLiked': false,
-    },
-    {
-      'id': 4,
-      'title': 'Organic Farming Principles',
-      'image': 'assets/images/tea_field.jpg',
-      'shortDescription': 'Organic farming relies on ecological processes, biodiversity, and cycles adapted to local conditions, rather than the use of synthetic fertilizers and pesticides.',
-      'fullDescription': 'Organic farming is a method of crop and livestock production that involves much more than choosing not to use pesticides, fertilizers, genetically modified organisms, antibiotics and growth hormones. The primary goal of organic agriculture is to optimize the health and productivity of interdependent communities of soil life, plants, animals and people. Organic farming principles include enhancing soil fertility, promoting biodiversity, conserving natural resources, and minimizing pollution. It emphasizes sustainable practices that build soil health and foster ecological balance.',
-      'isLiked': true,
-    },
-  ];
-
-  late List<Map<String, dynamic>> likedArticles;
+  late final ArticleRepository _repo;
+  List<Article> likedArticles = [];
+  bool _loading = true;
 
   @override
-  void initState() {
-    super.initState();
-    _filterLikedArticles();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ServiceLocator.init(context);
+    _repo = ServiceLocator.get<ArticleRepository>();
+    _loadLikedArticles();
   }
 
-  void _filterLikedArticles() {
-    likedArticles = allArticles.where((article) => article['isLiked'] == true).toList();
+  Future<void> _loadLikedArticles() async {
+    setState(() => _loading = true);
+    final articles = await _repo.fetchLikedArticles();
+    setState(() {
+      likedArticles = articles;
+      _loading = false;
+    });
   }
 
-  Future<void> _showUnlikeConfirmationDialog(BuildContext context, Map<String, dynamic> article) async {
+  Future<void> _showUnlikeConfirmationDialog(
+    BuildContext context,
+    Article article,
+  ) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Remove from Liked?'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.favorite_border, color: Colors.red[700]),
+              const SizedBox(width: 10),
+              const Text('Remove from Liked?'),
+            ],
+          ),
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                Text('Are you sure you want to remove "${article['title']}" from your liked articles?'),
+                Text(
+                  'Are you sure you want to remove "${article.title}" from your liked articles?',
+                ),
               ],
             ),
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('No'),
+              child: Text('No', style: TextStyle(color: Colors.grey[700])),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
             ),
-            TextButton(
-              child: const Text('Yes'),
-              onPressed: () {
-                setState(() {
-                  article['isLiked'] = false;
-                  _filterLikedArticles();
-                });
-                Navigator.of(dialogContext).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('"${article['title']}" removed from liked.')),
-                );
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Yes, Remove'),
+              onPressed: () async {
+                // Toggle like in Firebase
+                await _repo.toggleLike(article.id, false);
+                // Reload liked articles
+                await _loadLikedArticles();
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.white),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '"${article.title}" removed from liked',
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                }
               },
             ),
           ],
@@ -100,62 +119,92 @@ class _LikedArticlesScreenState extends State<LikedArticlesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
           'Liked Articles',
-          style: TextStyle(color: Colors.black),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00C853), Color(0xFF00E676)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  final article = likedArticles[index];
-                  return _buildArticleCard(article, context);
-                },
-                childCount: likedArticles.length,
-              ),
-            ),
-          ),
-          if (likedArticles.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.sentiment_dissatisfied, size: 80, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No liked articles yet.',
-                      style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                    ),
-                    Text(
-                      'Like some articles in Knowledge Hub to see them here!',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+      body:
+          _loading
+              ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00C853)),
+                  strokeWidth: 3,
                 ),
+              )
+              : CustomScrollView(
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 24,
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final article = likedArticles[index];
+                        return _buildArticleCard(article, context);
+                      }, childCount: likedArticles.length),
+                    ),
+                  ),
+                  if (likedArticles.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.sentiment_dissatisfied,
+                              size: 80,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No liked articles yet.',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            Text(
+                              'Like some articles in Knowledge Hub to see them here!',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[500],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ),
-        ],
-      ),
     );
   }
 
-  Widget _buildArticleCard(Map<String, dynamic> article, BuildContext context) {
+  Widget _buildArticleCard(Article article, BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -180,44 +229,60 @@ class _LikedArticlesScreenState extends State<LikedArticlesScreen> {
                   topLeft: Radius.circular(8),
                   topRight: Radius.circular(8),
                 ),
-                child: Image.asset(
-                  article['image'],
-                  width: double.infinity,
-                  height: 180,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: double.infinity,
-                      height: 180,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                    );
-                  },
-                ),
+                child:
+                    article.image.startsWith('http')
+                        ? Image.network(
+                          article.image,
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: double.infinity,
+                              height: 180,
+                              color: Colors.grey[300],
+                              child: const Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                            );
+                          },
+                        )
+                        : Image.asset(
+                          article.image,
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: double.infinity,
+                              height: 180,
+                              color: Colors.grey[300],
+                              child: const Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                            );
+                          },
+                        ),
               ),
               Positioned(
                 top: 8,
                 left: 8,
-                child: _buildIconButton(
-                  Icons.favorite,
-                      () {
-                    _showUnlikeConfirmationDialog(context, article);
-                  },
-                  article['isLiked'] ? Color(0xFF22C922) : Colors.black,
-                ),
+                child: _buildIconButton(Icons.close, () {
+                  _showUnlikeConfirmationDialog(context, article);
+                }, Colors.red),
               ),
               Positioned(
                 top: 8,
                 right: 8,
-                child: _buildIconButton(
-                  Icons.volume_up,
-                      () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Text-to-speech for article')),
-                    );
-                  },
-                  Colors.black,
-                ),
+                child: _buildIconButton(Icons.volume_up, () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Text-to-speech for article')),
+                  );
+                }, Colors.black),
               ),
             ],
           ),
@@ -227,7 +292,7 @@ class _LikedArticlesScreenState extends State<LikedArticlesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  article['title'],
+                  article.title,
                   style: GoogleFonts.montserrat(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -235,7 +300,7 @@ class _LikedArticlesScreenState extends State<LikedArticlesScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  article['shortDescription'],
+                  article.shortDescription,
                   textAlign: TextAlign.justify,
                   style: TextStyle(
                     fontSize: 14,
@@ -248,7 +313,9 @@ class _LikedArticlesScreenState extends State<LikedArticlesScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => KnowledgeHubDetailsScreen(article: article),
+                        builder:
+                            (context) =>
+                                KnowledgeHubDetailsScreen(article: article),
                       ),
                     );
                   },

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kissan/l10n/gen/app_localizations.dart';
+import 'package:kissan/core/models/article.dart';
+import 'package:kissan/core/di/service_locator.dart';
+import 'package:kissan/core/repositories/article_repository.dart';
 
 class KnowledgeHubDetailsScreen extends StatefulWidget {
-  final Map<String, dynamic> article;
+  final Article article;
 
   const KnowledgeHubDetailsScreen({super.key, required this.article});
 
@@ -14,19 +17,26 @@ class KnowledgeHubDetailsScreen extends StatefulWidget {
 
 class _KnowledgeHubDetailsScreenState extends State<KnowledgeHubDetailsScreen> {
   late bool isLiked;
+  bool _showTickAnimation = false;
+  late final ArticleRepository _repo;
 
   @override
   void initState() {
     super.initState();
-    isLiked = widget.article['isLiked'] ?? false;
+    isLiked = widget.article.isLiked;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _repo = ServiceLocator.get<ArticleRepository>();
   }
 
   @override
   Widget build(BuildContext context) {
-    final String title = widget.article['title'] ?? 'No Title';
-    final String fullDescription =
-        widget.article['fullDescription'] ?? 'No Description';
-    final String? imagePath = widget.article['image'];
+    final String title = widget.article.title;
+    final String fullDescription = widget.article.fullDescription;
+    final String imagePath = widget.article.image;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -57,15 +67,36 @@ class _KnowledgeHubDetailsScreenState extends State<KnowledgeHubDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (imagePath != null && imagePath.isNotEmpty)
+            if (imagePath.isNotEmpty)
               Stack(
                 children: [
-                  Image.asset(
-                    imagePath,
-                    width: double.infinity,
-                    height: 250,
-                    fit: BoxFit.cover,
-                  ),
+                  imagePath.startsWith('http')
+                      ? Image.network(
+                        imagePath,
+                        width: double.infinity,
+                        height: 250,
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (_, __, ___) => Container(
+                              width: double.infinity,
+                              height: 250,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.article, size: 80),
+                            ),
+                      )
+                      : Image.asset(
+                        imagePath,
+                        width: double.infinity,
+                        height: 250,
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (_, __, ___) => Container(
+                              width: double.infinity,
+                              height: 250,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.article, size: 80),
+                            ),
+                      ),
                   Positioned(top: 12, left: 12, child: _buildFavoriteButton()),
                 ],
               )
@@ -123,15 +154,35 @@ class _KnowledgeHubDetailsScreenState extends State<KnowledgeHubDetailsScreen> {
       ),
       child: IconButton(
         icon: Icon(
-          isLiked ? Icons.favorite : Icons.favorite,
+          _showTickAnimation ? Icons.check : Icons.add,
           size: 19,
-          color: isLiked ? Color(0xFF22C922) : Colors.black,
+          color: _showTickAnimation ? Color(0xFF22C922) : Colors.black,
         ),
-        onPressed: () {
-          setState(() {
-            isLiked = !isLiked;
-            widget.article['isLiked'] = isLiked;
-          });
+        onPressed: () async {
+          if (!isLiked && !_showTickAnimation) {
+            // Show tick animation when adding to liked
+            setState(() {
+              _showTickAnimation = true;
+            });
+            // Save to Firebase
+            await _repo.toggleLike(widget.article.id, true);
+            await Future.delayed(const Duration(milliseconds: 600));
+            if (mounted) {
+              setState(() {
+                _showTickAnimation = false;
+                isLiked = true;
+                widget.article.isLiked = true;
+              });
+            }
+          } else if (isLiked && !_showTickAnimation) {
+            // Already liked, remove from liked
+            setState(() {
+              isLiked = false;
+              widget.article.isLiked = false;
+            });
+            // Remove from Firebase
+            await _repo.toggleLike(widget.article.id, false);
+          }
         },
         padding: EdgeInsets.zero,
       ),

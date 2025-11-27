@@ -236,7 +236,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             color: Colors.grey.withOpacity(0.05),
                           ),
                           child: DropdownButtonFormField<String>(
-                            initialValue: _selectedProvince,
+                            value: _selectedProvince,
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,

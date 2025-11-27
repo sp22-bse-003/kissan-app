@@ -8,6 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kissan/core/services/image_upload_service.dart';
 import 'package:kissan/core/di/service_locator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:kissan/core/services/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -22,47 +24,195 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _isHoveringProfileImage = false;
   bool _isUploadingImage = false;
+  bool _isLoading = true;
   late final ImageUploadService _imageUploadService;
+  late final AuthService _authService;
 
-  Map<String, String> sellerInfo = {
-    'name': 'Bilal Yousaf',
-    'email': 'bilal.yousaf123422@gmail.com',
-    'phone': '+92 311 5318776',
-    'address': 'LDA Avenue 1, Lahore',
-    'joinedOn': 'March 2024',
-    'totalOrders': '28',
+  Map<String, dynamic> userData = {
+    'name': 'User',
+    'phone': '',
+    'profilePicture': null,
+    'joinedOn': '',
   };
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ServiceLocator.init(context);
-      _imageUploadService = ServiceLocator.get<ImageUploadService>();
-    });
+    _authService = AuthService.instance;
+    _loadUserData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ServiceLocator.init(context);
+    _imageUploadService = ServiceLocator.get<ImageUploadService>();
+  }
+
+  Future<void> _loadUserData() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final userId = currentUser?.uid;
+
+      debugPrint('🔍 Loading user data for userId: $userId');
+      debugPrint('🔍 Current user displayName: ${currentUser?.displayName}');
+      debugPrint('🔍 Current user phoneNumber: ${currentUser?.phoneNumber}');
+
+      if (userId == null || currentUser == null) {
+        debugPrint('❌ No user logged in');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            userData = {
+              'name': 'Guest',
+              'phone': 'Not logged in',
+              'profilePicture': null,
+              'joinedOn': 'N/A',
+            };
+          });
+        }
+        return;
+      }
+
+      // Get Firestore data
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .get();
+
+      debugPrint('🔍 Firestore doc exists: ${doc.exists}');
+      debugPrint('🔍 Firestore data: ${doc.data()}');
+
+      if (mounted) {
+        String name = 'User';
+        String phone = '';
+        String? profilePic;
+        String joinedOn = 'Recently';
+
+        if (doc.exists) {
+          final data = doc.data()!;
+          name = data['name'] ?? currentUser.displayName ?? 'User';
+          phone = data['phone'] ?? currentUser.phoneNumber ?? '';
+          profilePic = data['profilePicture'];
+
+          final createdAt = data['createdAt'] as Timestamp?;
+          if (createdAt != null) {
+            joinedOn = _formatDate(createdAt.toDate());
+          }
+
+          // If phone is empty but we have it in the document, it means user signed up
+          // but phone wasn't saved. Show a placeholder.
+          if (phone.isEmpty) {
+            phone = 'Add phone number';
+            debugPrint('⚠️ Phone number is empty in Firestore');
+          }
+        } else {
+          // Use Firebase Auth data and create Firestore doc
+          name = currentUser.displayName ?? 'User';
+          phone = currentUser.phoneNumber ?? '';
+          profilePic = currentUser.photoURL;
+
+          debugPrint('📝 Creating Firestore document...');
+          // Create the document
+          await FirebaseFirestore.instance.collection('users').doc(userId).set({
+            'uid': userId,
+            'name': name,
+            'phone': phone,
+            'profilePicture': profilePic,
+            'role': 'buyer',
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          debugPrint('✅ Firestore document created');
+        }
+
+        setState(() {
+          userData = {
+            'name': name,
+            'phone': phone,
+            'profilePicture': profilePic,
+            'joinedOn': joinedOn,
+          };
+          _selectedImagePath = profilePic;
+          if (_selectedImagePath != null) {
+            sharedProfileImagePath = _selectedImagePath;
+          }
+          _isLoading = false;
+        });
+
+        debugPrint('✅ User data loaded: $userData');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error loading user data: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
+
+      if (mounted) {
+        // Show actual Firebase Auth data as fallback
+        final currentUser = FirebaseAuth.instance.currentUser;
+        setState(() {
+          userData = {
+            'name': currentUser?.displayName ?? 'User',
+            'phone': currentUser?.phoneNumber ?? 'No phone',
+            'profilePicture': currentUser?.photoURL,
+            'joinedOn': 'Recently',
+          };
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${months[date.month - 1]} ${date.year}';
   }
 
   Future<void> _uploadProfileImage(File imageFile) async {
+    if (!mounted) return;
     setState(() => _isUploadingImage = true);
 
     try {
-      // Use Firebase Auth user ID or a temporary ID
-      final userId =
-          FirebaseAuth.instance.currentUser?.uid ??
-          'buyer_${DateTime.now().millisecondsSinceEpoch}';
+      final userId = _authService.currentUserId;
+      if (userId == null) {
+        throw 'User not logged in. Please sign in again.';
+      }
 
       final downloadUrl = await _imageUploadService.uploadProfileImage(
         imageFile,
         userId,
       );
 
-      setState(() {
-        _selectedImagePath = downloadUrl;
-        sharedProfileImagePath = downloadUrl;
-        _isUploadingImage = false;
-      });
+      // Save to Firestore - create document if it doesn't exist
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
+        'profilePicture': downloadUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
       if (mounted) {
+        setState(() {
+          _selectedImagePath = downloadUrl;
+          sharedProfileImagePath = downloadUrl;
+          userData['profilePicture'] = downloadUrl;
+          _isUploadingImage = false;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile picture uploaded successfully!'),
@@ -71,12 +221,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     } catch (e) {
-      setState(() => _isUploadingImage = false);
-
+      debugPrint('Upload error: $e');
       if (mounted) {
+        setState(() => _isUploadingImage = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to upload image: $e'),
+            content: Text('Failed to upload: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -85,17 +235,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showEditInfoModal() {
+    // Capture the ScaffoldMessenger before the async operation
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder:
           (context) => EditInfoModal(
-            initialData: sellerInfo,
-            onSave: (updatedData) {
-              setState(() {
-                sellerInfo = updatedData;
-              });
+            initialData: userData,
+            onSave: (updatedData) async {
+              try {
+                final userId = _authService.currentUserId;
+                if (userId == null) {
+                  throw 'User not logged in';
+                }
+
+                // Update Firestore with merge to avoid overwriting
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .set({
+                      'name': updatedData['name'],
+                      'phone': updatedData['phone'],
+                      if (updatedData['profilePicture'] != null)
+                        'profilePicture': updatedData['profilePicture'],
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    }, SetOptions(merge: true));
+
+                // Also update Firebase Auth display name
+                await FirebaseAuth.instance.currentUser?.updateDisplayName(
+                  updatedData['name'],
+                );
+
+                await _loadUserData();
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Profile updated successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                debugPrint('Save error: $e');
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to update: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
           ),
     );
@@ -406,7 +599,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 20),
 
                       Text(
-                        sellerInfo['name'] ?? 'Seller Name',
+                        userData['name'] ?? 'User',
                         style: GoogleFonts.poppins(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -422,60 +615,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Profile Information Section
             Padding(
               padding: const EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
+              child:
+                  _isLoading
+                      ? Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF00C853),
+                          ),
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        _buildInfoRow('Email:', sellerInfo['email'] ?? ''),
-                        _buildInfoRow('Phone:', sellerInfo['phone'] ?? ''),
-                        _buildInfoRow('Address:', sellerInfo['address'] ?? ''),
-                        _buildInfoRow(
-                          'Joined on:',
-                          sellerInfo['joinedOn'] ?? '',
-                        ),
-                      ],
-                    ),
-                  ),
+                      )
+                      : Column(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                _buildInfoRow(
+                                  'Phone:',
+                                  userData['phone'] ?? '',
+                                ),
+                                _buildInfoRow(
+                                  'Joined on:',
+                                  userData['joinedOn'] ?? '',
+                                ),
+                              ],
+                            ),
+                          ),
 
-                  const SizedBox(height: 30),
+                          const SizedBox(height: 30),
 
-                  SizedBox(
-                    width: 200,
-                    child: ElevatedButton.icon(
-                      onPressed: _showEditInfoModal,
-                      icon: const Icon(Icons.edit),
-                      label: const Text('Edit Info'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00C853),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        elevation: 2,
-                        textStyle: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                          SizedBox(
+                            width: 200,
+                            child: ElevatedButton.icon(
+                              onPressed: _showEditInfoModal,
+                              icon: const Icon(Icons.edit),
+                              label: const Text('Edit Info'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF00C853),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                elevation: 2,
+                                textStyle: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),

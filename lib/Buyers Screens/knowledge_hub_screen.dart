@@ -18,6 +18,7 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
   List<Article> _articles = const [];
   bool _loading = true;
   String _query = '';
+  String? _animatingArticleId;
 
   @override
   void didChangeDependencies() {
@@ -129,25 +130,73 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
                   topLeft: Radius.circular(8),
                   topRight: Radius.circular(8),
                 ),
-                child: Image.asset(
-                  article.image,
-                  width: double.infinity,
-                  height: 180,
-                  fit: BoxFit.cover,
-                ),
+                child:
+                    article.image.startsWith('http')
+                        ? Image.network(
+                          article.image,
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (_, __, ___) => Container(
+                                width: double.infinity,
+                                height: 180,
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.article, size: 60),
+                              ),
+                        )
+                        : Image.asset(
+                          article.image,
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (_, __, ___) => Container(
+                                width: double.infinity,
+                                height: 180,
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.article, size: 60),
+                              ),
+                        ),
               ),
               Positioned(
                 top: 8,
                 left: 8,
                 child: _buildIconButton(
-                  Icons.favorite,
+                  _animatingArticleId == article.id ? Icons.check : Icons.add,
                   () async {
-                    setState(() {
-                      article.isLiked = !article.isLiked;
-                    });
-                    await _repo.toggleLike(article.id, article.isLiked);
+                    // If already liked, show confirmation dialog before removing
+                    if (article.isLiked && _animatingArticleId != article.id) {
+                      final confirmed = await _showUnlikeConfirmationDialog(
+                        context,
+                        article,
+                      );
+                      if (confirmed == true) {
+                        setState(() {
+                          article.isLiked = false;
+                          _animatingArticleId = null;
+                        });
+                        await _repo.toggleLike(article.id, false);
+                      }
+                    } else if (!article.isLiked) {
+                      // Show tick animation then add to liked
+                      setState(() {
+                        _animatingArticleId = article.id;
+                      });
+                      await _repo.toggleLike(article.id, true);
+                      // Wait for animation to be visible
+                      await Future.delayed(const Duration(milliseconds: 600));
+                      if (mounted) {
+                        setState(() {
+                          article.isLiked = true;
+                          _animatingArticleId = null;
+                        });
+                      }
+                    }
                   },
-                  article.isLiked ? const Color(0xFF22C922) : Colors.black,
+                  _animatingArticleId == article.id
+                      ? const Color(0xFF22C922)
+                      : Colors.black,
                 ),
               ),
               Positioned(
@@ -185,9 +234,8 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) => KnowledgeHubDetailsScreen(
-                              article: article.toMap(),
-                            ),
+                            (context) =>
+                                KnowledgeHubDetailsScreen(article: article),
                       ),
                     );
                   },
@@ -208,6 +256,52 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<bool?> _showUnlikeConfirmationDialog(
+    BuildContext context,
+    Article article,
+  ) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              const SizedBox(width: 8),
+              const Text('Remove from Liked?', style: TextStyle(fontSize: 18)),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to remove "${article.title}" from your liked articles?',
+            style: const TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF22C922),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Remove',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

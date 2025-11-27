@@ -5,6 +5,7 @@ import 'package:kissan/core/di/service_locator.dart';
 import 'package:kissan/core/models/product.dart' as model;
 import 'package:kissan/core/repositories/product_repository.dart';
 import 'package:kissan/core/services/tts_service.dart';
+import 'package:kissan/core/services/cart_service.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
@@ -48,6 +49,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   ];
 
   late final ProductRepository _repo;
+  late final CartService _cartService;
   List<model.Product> products = [];
   bool _loading = true;
 
@@ -58,6 +60,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       ServiceLocator.init(context);
       _repo = ServiceLocator.get<ProductRepository>();
+      _cartService = ServiceLocator.get<CartService>();
       await _loadProducts();
     });
   }
@@ -137,6 +140,46 @@ class _ProductsScreenState extends State<ProductsScreen> {
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
+    }
+  }
+
+  Future<void> _addToCart(model.Product product) async {
+    try {
+      await _cartService.addProductToCart(
+        productId: product.id ?? '',
+        productName: product.name,
+        productBrand: product.category, // Using category as brand
+        productWeight: '1 unit', // Default weight
+        productPrice: product.price,
+        productImageUrl: product.imageUrl ?? '',
+        quantity: 1,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(child: Text('${product.name} added to cart')),
+              ],
+            ),
+            backgroundColor: const Color(0xFF00C853),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add to cart: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -963,17 +1006,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '${product.name} added to cart',
-                                      ),
-                                      duration: const Duration(seconds: 1),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                },
+                                onTap: () => _addToCart(product),
                                 borderRadius: BorderRadius.circular(8),
                                 child: Padding(
                                   padding: EdgeInsets.all(padding * 0.5),

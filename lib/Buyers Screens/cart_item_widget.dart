@@ -74,12 +74,55 @@ class CartItemWidget extends StatelessWidget {
                   const SizedBox(width: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8.0),
-                    child: Image.asset(
-                      item.imageUrl,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
+                    child:
+                        item.imageUrl.isEmpty
+                            ? Container(
+                              width: 80,
+                              height: 80,
+                              color: Colors.grey[300],
+                              child: const Icon(
+                                Icons.shopping_bag,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                            )
+                            : item.imageUrl.startsWith('http')
+                            ? Image.network(
+                              item.imageUrl,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: Colors.grey[300],
+                                  child: const Icon(
+                                    Icons.image_not_supported,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
+                            )
+                            : Image.asset(
+                              item.imageUrl,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: Colors.grey[300],
+                                  child: const Icon(
+                                    Icons.shopping_bag,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
+                            ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -92,34 +135,47 @@ class CartItemWidget extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             fontSize: 17,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        Text(item.brand, style: const TextStyle(fontSize: 14)),
+                        Text(
+                          item.brand,
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: 4),
-                        Text(item.weight, style: const TextStyle(fontSize: 14)),
-                        const SizedBox(height: 10),
+                        Text(
+                          item.weight,
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             _roundIconButton(
                               Icons.remove,
                               onPressed: item.quantity > 1 ? onRemove : null,
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 8),
                             Text(
                               '${item.quantity}',
-                              style: const TextStyle(fontSize: 15),
+                              style: const TextStyle(fontSize: 14),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 8),
                             _roundIconButton(Icons.add, onPressed: onAdd),
-                            const Spacer(),
-                            Flexible(
+                            const SizedBox(width: 6),
+                            Expanded(
                               child: Text(
-                                'Rs.${item.itemTotalPrice.toStringAsFixed(2)}',
+                                'Rs.${item.itemTotalPrice.toStringAsFixed(0)}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  fontSize: 15,
                                 ),
                                 overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.right,
                               ),
                             ),
                           ],

@@ -63,6 +63,15 @@ class LocalArticleRepository implements ArticleRepository {
   }
 
   @override
+  Future<List<Article>> fetchLikedArticles() async {
+    final articles = _seed();
+    for (final a in articles) {
+      a.isLiked = _likes[a.id] ?? false;
+    }
+    return articles.where((article) => _likes[article.id] == true).toList();
+  }
+
+  @override
   Future<Article> addArticle(Article article) async {
     // Local repository doesn't support persistence
     throw UnimplementedError('Add article not supported in local repository');
