@@ -202,7 +202,7 @@ class _OTPScreenState extends State<OTPScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[800],
+                  color: const Color(0xFF00C853),
                 ),
               ),
               const SizedBox(height: 10),
@@ -262,12 +262,12 @@ class _OTPScreenState extends State<OTPScreen> {
                         counterText: '',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.green[300]!),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.green[700]!,
+                          borderSide: const BorderSide(
+                            color: Color(0xFF00C853),
                             width: 2,
                           ),
                         ),
@@ -297,7 +297,7 @@ class _OTPScreenState extends State<OTPScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.green[700],
+                    backgroundColor: const Color(0xFF00C853),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -334,7 +334,7 @@ class _OTPScreenState extends State<OTPScreen> {
                           child: Text(
                             'Resend OTP',
                             style: GoogleFonts.poppins(
-                              color: Colors.green[700],
+                              color: const Color(0xFF00C853),
                               fontWeight: FontWeight.w600,
                             ),
                           ),

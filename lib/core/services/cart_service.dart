@@ -114,6 +114,7 @@ class CartService {
     required String productWeight,
     required double productPrice,
     required String productImageUrl,
+    String? sellerId,
     int quantity = 1,
   }) async {
     final cartItem = CartItemModel(
@@ -123,6 +124,7 @@ class CartService {
       productWeight: productWeight,
       productPrice: productPrice,
       productImageUrl: productImageUrl,
+      sellerId: sellerId,
       quantity: quantity,
     );
 

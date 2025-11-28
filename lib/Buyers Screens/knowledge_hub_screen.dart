@@ -130,12 +130,34 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
                   topLeft: Radius.circular(8),
                   topRight: Radius.circular(8),
                 ),
-                child: Image.asset(
-                  article.image,
-                  width: double.infinity,
-                  height: 180,
-                  fit: BoxFit.cover,
-                ),
+                child:
+                    article.image.startsWith('http')
+                        ? Image.network(
+                          article.image,
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (_, __, ___) => Container(
+                                width: double.infinity,
+                                height: 180,
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.article, size: 60),
+                              ),
+                        )
+                        : Image.asset(
+                          article.image,
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (_, __, ___) => Container(
+                                width: double.infinity,
+                                height: 180,
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.article, size: 60),
+                              ),
+                        ),
               ),
               Positioned(
                 top: 8,
@@ -234,6 +256,52 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<bool?> _showUnlikeConfirmationDialog(
+    BuildContext context,
+    Article article,
+  ) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              const SizedBox(width: 8),
+              const Text('Remove from Liked?', style: TextStyle(fontSize: 18)),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to remove "${article.title}" from your liked articles?',
+            style: const TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF22C922),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Remove',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

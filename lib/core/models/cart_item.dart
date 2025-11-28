@@ -7,6 +7,7 @@ class CartItemModel {
   final String productWeight;
   final double productPrice;
   final String productImageUrl;
+  final String? sellerId; // Firebase Auth UID of the seller
   final int quantity;
   final bool isSelected;
   final DateTime addedAt;
@@ -20,6 +21,7 @@ class CartItemModel {
     required this.productWeight,
     required this.productPrice,
     required this.productImageUrl,
+    this.sellerId,
     this.quantity = 1,
     this.isSelected = true,
     DateTime? addedAt,
@@ -38,6 +40,7 @@ class CartItemModel {
     String? productWeight,
     double? productPrice,
     String? productImageUrl,
+    String? sellerId,
     int? quantity,
     bool? isSelected,
     DateTime? addedAt,
@@ -51,6 +54,7 @@ class CartItemModel {
       productWeight: productWeight ?? this.productWeight,
       productPrice: productPrice ?? this.productPrice,
       productImageUrl: productImageUrl ?? this.productImageUrl,
+      sellerId: sellerId ?? this.sellerId,
       quantity: quantity ?? this.quantity,
       isSelected: isSelected ?? this.isSelected,
       addedAt: addedAt ?? this.addedAt,
@@ -67,6 +71,7 @@ class CartItemModel {
       'productWeight': productWeight,
       'productPrice': productPrice,
       'productImageUrl': productImageUrl,
+      if (sellerId != null) 'sellerId': sellerId,
       'quantity': quantity,
       'isSelected': isSelected,
       'addedAt': addedAt.toIso8601String(),
@@ -84,6 +89,7 @@ class CartItemModel {
       productWeight: map['productWeight'] ?? '',
       productPrice: (map['productPrice'] ?? 0.0).toDouble(),
       productImageUrl: map['productImageUrl'] ?? '',
+      sellerId: map['sellerId'],
       quantity: map['quantity'] ?? 1,
       isSelected: map['isSelected'] ?? true,
       addedAt:

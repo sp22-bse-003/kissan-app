@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kissan/core/services/tts_service.dart';
+import 'package:kissan/core/services/cart_service.dart';
+import 'package:kissan/core/di/service_locator.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -13,6 +16,61 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   int currentImageIndex = 0;
   final int totalImages = 4;
+  late final CartService _cartService;
+
+  @override
+  void initState() {
+    super.initState();
+    _cartService = ServiceLocator.get<CartService>();
+  }
+
+  Future<void> _addToCart() async {
+    try {
+      final productId =
+          widget.product['id']?.toString() ??
+          'product_${DateTime.now().millisecondsSinceEpoch}';
+      final productName = widget.product['name'] ?? 'Unknown Product';
+      final sellerName = widget.product['sellerName'] ?? 'Unknown Seller';
+      final weight = widget.product['weight']?.toString() ?? '0 kg';
+      final price = (widget.product['price'] as num?)?.toDouble() ?? 0.0;
+      final imageUrl =
+          widget.product['imageUrl'] ?? widget.product['image'] ?? '';
+      final sellerId = widget.product['sellerId'];
+
+      await _cartService.addProductToCart(
+        productId: productId,
+        productName: productName,
+        productBrand: sellerName,
+        productWeight: weight,
+        productPrice: price,
+        productImageUrl: imageUrl,
+        sellerId: sellerId,
+        quantity: 1,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Added to cart!'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
 
   Widget _buildProductImage(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) {
@@ -23,11 +81,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
-          child: Icon(
-            Icons.image_not_supported,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          child: Icon(Icons.grass, size: 80, color: Colors.green[300]),
         ),
       );
     }
@@ -81,17 +135,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.broken_image, size: 80, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Failed to load image',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
+                child: Icon(Icons.grass, size: 80, color: Colors.green[300]),
               ),
             );
           },
@@ -99,29 +143,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       );
     }
 
-    // If it's an asset path
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Image.asset(
-        imageUrl,
-        height: 300,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            height: 300,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Icon(
-                Icons.image_not_supported,
-                size: 80,
-                color: Colors.grey[400],
-              ),
-            ),
-          );
-        },
+    // If it's not a valid URL, show placeholder
+    return Container(
+      height: 300,
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Center(
+        child: Icon(Icons.grass, size: 80, color: Colors.green[300]),
       ),
     );
   }
@@ -140,6 +170,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         widget.product['imageUrl'] ?? widget.product['image'];
     final int weight = widget.product['weight'] ?? 0;
     final double price = (widget.product['price'] as num?)?.toDouble() ?? 0.0;
+    final String category = widget.product['category'] ?? 'Unknown';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -164,7 +195,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.volume_up, color: Color(0xFF00C853)),
+            icon: const Icon(Icons.volume_up, color: Colors.black),
             onPressed: () async {
               final productName = widget.product['name'] ?? 'Product';
               final text =
@@ -176,9 +207,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             padding: EdgeInsets.only(right: 5),
             child: IconButton(
               icon: const Icon(Icons.shopping_cart, color: Colors.black),
-              onPressed: () {
-                // Handle cart action
-              },
+              onPressed: _addToCart,
             ),
           ),
         ],
@@ -196,20 +225,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.product['name'],
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      widget.product['name'],
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     'Rs.${price.toStringAsFixed(0)}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF32CD32),
+                      color: Color(0xFF00C853),
                     ),
                   ),
                 ],
@@ -220,8 +255,33 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Weight', style: TextStyle(fontSize: 16)),
-                  const SizedBox(width: 100),
-                  Text('$weight kg', style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      '$weight kg',
+                      style: const TextStyle(fontSize: 16),
+                      textAlign: TextAlign.end,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Category', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      category,
+                      style: const TextStyle(fontSize: 16),
+                      textAlign: TextAlign.end,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 38),
@@ -234,7 +294,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.volume_up, size: 20),
+                    icon: const Icon(
+                      Icons.volume_up,
+                      size: 20,
+                      color: Colors.black,
+                    ),
                     onPressed: () {
                       // Handle text-to-speech for description
                     },
@@ -260,7 +324,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.volume_up, size: 20),
+                    icon: const Icon(
+                      Icons.volume_up,
+                      size: 20,
+                      color: Colors.black,
+                    ),
                     onPressed: () {
                       // Handle text-to-speech for seller info
                     },

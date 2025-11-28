@@ -733,6 +733,7 @@ class _OrdersScreenState extends State<OrdersScreen>
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'My Orders',
           style: TextStyle(
@@ -761,6 +762,7 @@ class _OrdersScreenState extends State<OrdersScreen>
           labelStyle: const TextStyle(fontWeight: FontWeight.bold),
           isScrollable: true,
           labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           tabs: const [
             Tab(text: 'PENDING'),
             Tab(text: 'ON THE WAY'),

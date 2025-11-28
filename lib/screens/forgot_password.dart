@@ -62,7 +62,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               (context) => AlertDialog(
                 title: Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green[700]),
+                    const Icon(Icons.check_circle, color: Color(0xFF00C853)),
                     const SizedBox(width: 10),
                     const Text('Email Sent'),
                   ],
@@ -102,7 +102,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     child: Text(
                       'OK',
                       style: GoogleFonts.poppins(
-                        color: Colors.green[700],
+                        color: const Color(0xFF00C853),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -142,7 +142,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.green),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF00C853)),
           onPressed: () {
             Navigator.pop(context); // Go back to previous screen
           },
@@ -160,7 +160,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[800],
+                  color: const Color(0xFF00C853),
                 ),
               ),
               const SizedBox(height: 10),
@@ -221,7 +221,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.green[700],
+                    backgroundColor: const Color(0xFF00C853),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

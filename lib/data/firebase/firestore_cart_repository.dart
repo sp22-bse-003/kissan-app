@@ -20,12 +20,21 @@ class FirestoreCartRepository implements CartRepository {
     return _getUserCartCollection(
       userId,
     ).orderBy('addedAt', descending: true).snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return CartItemModel.fromMap(
-          doc.data() as Map<String, dynamic>,
-          id: doc.id,
-        );
-      }).toList();
+      final items =
+          snapshot.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            if (kDebugMode) {
+              print(
+                '\n🛒 [FIRESTORE_CART_REPOSITORY] Reading cart item from Firebase:',
+              );
+              print('   Product: ${data['productName']}');
+              print(
+                '   - Seller ID in Firebase doc: ${data['sellerId'] ?? "NULL"}',
+              );
+            }
+            return CartItemModel.fromMap(data, id: doc.id);
+          }).toList();
+      return items;
     });
   }
 

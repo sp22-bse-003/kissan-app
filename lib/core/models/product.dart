@@ -6,6 +6,7 @@ class Product {
   final String category;
   final String description;
   final String? imageUrl; // Can be an asset path or network URL
+  final String? sellerId; // Firebase Auth UID of the seller
   final String? sellerName;
   final String? sellerPhone;
   final String? sellerLocation;
@@ -20,6 +21,7 @@ class Product {
     required this.category,
     required this.description,
     this.imageUrl,
+    this.sellerId,
     this.sellerName,
     this.sellerPhone,
     this.sellerLocation,
@@ -35,6 +37,7 @@ class Product {
     String? category,
     String? description,
     String? imageUrl,
+    String? sellerId,
     String? sellerName,
     String? sellerPhone,
     String? sellerLocation,
@@ -49,6 +52,7 @@ class Product {
       category: category ?? this.category,
       description: description ?? this.description,
       imageUrl: imageUrl ?? this.imageUrl,
+      sellerId: sellerId ?? this.sellerId,
       sellerName: sellerName ?? this.sellerName,
       sellerPhone: sellerPhone ?? this.sellerPhone,
       sellerLocation: sellerLocation ?? this.sellerLocation,
@@ -74,6 +78,7 @@ class Product {
       category: map['category'] ?? '',
       description: map['description'] ?? '',
       imageUrl: map['imageUrl'],
+      sellerId: map['sellerId'],
       sellerName: map['sellerName'],
       sellerPhone: map['sellerPhone'],
       sellerLocation: map['sellerLocation'],
@@ -100,6 +105,7 @@ class Product {
     'category': category,
     'description': description,
     'imageUrl': imageUrl,
+    if (sellerId != null) 'sellerId': sellerId,
     'sellerName': sellerName,
     'sellerPhone': sellerPhone,
     'sellerLocation': sellerLocation,

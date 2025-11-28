@@ -37,7 +37,7 @@ class LanguageInitializerScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
-                    color: Colors.green[800],
+                    color: const Color(0xFF00C853),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -45,7 +45,7 @@ class LanguageInitializerScreen extends StatelessWidget {
                 // English Button
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[700],
+                    backgroundColor: const Color(0xFF00C853),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 40,
                       vertical: 16,
@@ -74,7 +74,7 @@ class LanguageInitializerScreen extends StatelessWidget {
                 // Urdu Button
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[700],
+                    backgroundColor: const Color(0xFF00C853),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 40,
                       vertical: 16,

@@ -16,33 +16,44 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const ProductsScreen(),
-    const CartScreen(),
-    const KnowledgeHubScreen(),
-    const ProfileScreen(),
-  ];
+  // Keys for refreshing screens
+  Key _productsKey = UniqueKey();
+  Key _cartKey = UniqueKey();
+  Key _knowledgeHubKey = UniqueKey();
+  Key _profileKey = UniqueKey();
 
-  final List<Widget> _initialScreens = [
-    const ProductsScreen(),
-    const CartScreen(),
-    const KnowledgeHubScreen(),
-    const ProfileScreen(),
+  List<Widget> get _screens => [
+    ProductsScreen(key: _productsKey),
+    CartScreen(key: _cartKey),
+    KnowledgeHubScreen(key: _knowledgeHubKey),
+    ProfileScreen(key: _profileKey),
   ];
 
   void _onItemTapped(int index) {
+    // If tapping the same tab, refresh it
     if (index == _selectedIndex) {
       setState(() {
-        _screens[index] = _initialScreens[index];
+        switch (index) {
+          case 0:
+            _productsKey = UniqueKey();
+            break;
+          case 1:
+            _cartKey = UniqueKey();
+            break;
+          case 2:
+            _knowledgeHubKey = UniqueKey();
+            break;
+          case 3:
+            _profileKey = UniqueKey();
+            break;
+        }
+      });
+    } else {
+      setState(() {
+        _selectedIndex = index;
       });
     }
-
-    setState(() {
-      _selectedIndex = index;
-    });
   }
-
-  void _onDrawerItemSelected(String item) {}
 
   @override
   Widget build(BuildContext context) {
@@ -84,12 +95,6 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
         ),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
       ),
       drawer: const CustomDrawer(),
       body: _screens[_selectedIndex],

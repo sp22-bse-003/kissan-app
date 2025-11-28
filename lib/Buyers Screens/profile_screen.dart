@@ -10,6 +10,7 @@ import 'package:kissan/core/di/service_locator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kissan/core/services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:kissan/screens/forgot_password.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -382,6 +383,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _navigateToChangePassword() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -672,6 +680,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                                 elevation: 2,
+                                textStyle: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          SizedBox(
+                            width: 200,
+                            child: OutlinedButton.icon(
+                              onPressed: _navigateToChangePassword,
+                              icon: const Icon(Icons.lock_outline),
+                              label: const Text('Change Password'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF00C853),
+                                side: const BorderSide(
+                                  color: Color(0xFF00C853),
+                                  width: 2,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
                                 textStyle: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

@@ -25,6 +25,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   String _selectedRole = 'buyer';
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -159,7 +161,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green[800],
+                    color: const Color(0xFF00C853),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -274,7 +276,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                               value: 'buyer',
                               groupValue: _selectedRole,
-                              activeColor: Colors.green[700],
+                              activeColor: const Color(0xFF00C853),
                               onChanged:
                                   _isLoading
                                       ? null
@@ -292,7 +294,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                               value: 'seller',
                               groupValue: _selectedRole,
-                              activeColor: Colors.green[700],
+                              activeColor: const Color(0xFF00C853),
                               onChanged:
                                   _isLoading
                                       ? null
@@ -346,10 +348,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 TextField(
                   controller: _passwordController,
                   enabled: !_isLoading,
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: "Password",
                     prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: Colors.grey[600],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -361,10 +376,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 TextField(
                   controller: _confirmPasswordController,
                   enabled: !_isLoading,
-                  obscureText: true,
+                  obscureText: _obscureConfirmPassword,
                   decoration: InputDecoration(
                     labelText: "Confirm Password",
                     prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: Colors.grey[600],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -378,7 +406,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.green[700],
+                      backgroundColor: const Color(0xFF00C853),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -425,7 +453,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       },
                       child: Text(
                         "Login",
-                        style: GoogleFonts.poppins(color: Colors.green[800]),
+                        style: GoogleFonts.poppins(
+                          color: const Color(0xFF00C853),
+                        ),
                       ),
                     ),
                   ],

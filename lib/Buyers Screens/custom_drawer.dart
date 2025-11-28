@@ -81,7 +81,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Color(0xFF4CAF50);
+    final primaryColor = Color(0xFF00C853);
 
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.78,
@@ -101,7 +101,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [primaryColor, primaryColor.withOpacity(0.7)],
+                  colors: [Color(0xFF00C853), Color(0xFF00E676)],
                 ),
                 borderRadius: BorderRadius.only(topRight: Radius.circular(20)),
               ),
@@ -401,7 +401,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       content: Text(
                         AppLocalizations.of(context)!.languageSetUrdu,
                       ),
-                      backgroundColor: const Color(0xFF4CAF50),
+                      backgroundColor: const Color(0xFF00C853),
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -474,7 +474,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
+                backgroundColor: const Color(0xFF00C853),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),

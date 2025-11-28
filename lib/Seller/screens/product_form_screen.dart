@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -164,6 +165,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         }
       }
 
+      // Get current seller's user ID
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final sellerId = currentUser?.uid;
+
       final product = Product(
         id: widget.product?.id,
         name: _nameController.text,
@@ -172,6 +177,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         category: _selectedCategory!,
         description: _descriptionController.text,
         imageUrl: finalImageUrl,
+        sellerId: sellerId, // Store seller's Firebase Auth UID
       );
 
       await widget.onSave(product);

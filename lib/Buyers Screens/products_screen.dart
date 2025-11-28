@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kissan/l10n/gen/app_localizations.dart';
 import './product_details_screen.dart';
@@ -53,6 +54,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
   List<model.Product> products = [];
   bool _loading = true;
 
+  // Pagination
+  int currentPage = 1;
+  final int productsPerPage = 20;
+
   @override
   void initState() {
     super.initState();
@@ -87,7 +92,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     });
   }
 
-  List<model.Product> get filteredProducts {
+  List<model.Product> get allFilteredProducts {
     var filtered =
         products.where((product) {
           final price = product.price;
@@ -133,6 +138,55 @@ class _ProductsScreenState extends State<ProductsScreen> {
     return filtered;
   }
 
+  // Get paginated products for current page
+  List<model.Product> get filteredProducts {
+    final allProducts = allFilteredProducts;
+    final startIndex = (currentPage - 1) * productsPerPage;
+    final endIndex = startIndex + productsPerPage;
+
+    if (startIndex >= allProducts.length) {
+      return [];
+    }
+
+    return allProducts.sublist(
+      startIndex,
+      endIndex > allProducts.length ? allProducts.length : endIndex,
+    );
+  }
+
+  // Get total pages
+  int get totalPages {
+    final total = allFilteredProducts.length;
+    return (total / productsPerPage).ceil();
+  }
+
+  // Navigate to next page
+  void _nextPage() {
+    if (currentPage < totalPages) {
+      setState(() {
+        currentPage++;
+      });
+      scrollToTop();
+    }
+  }
+
+  // Navigate to previous page
+  void _previousPage() {
+    if (currentPage > 1) {
+      setState(() {
+        currentPage--;
+      });
+      scrollToTop();
+    }
+  }
+
+  // Reset to page 1 when filters change
+  void _resetPagination() {
+    setState(() {
+      currentPage = 1;
+    });
+  }
+
   void scrollToTop() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -152,6 +206,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         productWeight: '1 unit', // Default weight
         productPrice: product.price,
         productImageUrl: product.imageUrl ?? '',
+        sellerId: product.sellerId,
         quantity: 1,
       );
 
@@ -196,7 +251,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     if (!mounted) return const SizedBox.shrink();
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.grey[100],
       body: SafeArea(
         child: Stack(
           children: [
@@ -243,17 +298,27 @@ class _ProductsScreenState extends State<ProductsScreen> {
                             ],
                             const SizedBox(height: 16),
                             _buildCategoryFilters(),
-                            const SizedBox(height: 12),
-                            _buildProductCount(),
-                            const SizedBox(height: 16),
-                            _loading
-                                ? const Center(
-                                  child: CircularProgressIndicator(),
-                                )
-                                : _buildProductGrid(),
                           ],
                         ),
                       ),
+                      const SizedBox(height: 20),
+                      _loading
+                          ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(40.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                          : Column(
+                            children: [
+                              _buildProductGrid(),
+                              if (allFilteredProducts.isNotEmpty) ...[
+                                const SizedBox(height: 24),
+                                _buildPaginationControls(),
+                                const SizedBox(height: 20),
+                              ],
+                            ],
+                          ),
                     ],
                   ),
                 ),
@@ -295,6 +360,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
               onChanged: (value) {
                 setState(() {
                   searchQuery = value;
+                  _resetPagination();
                 });
               },
               decoration: InputDecoration(
@@ -527,46 +593,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
   }
 
-  // Product Count Display
-  Widget _buildProductCount() {
-    final totalCount = products.length;
-    final filteredCount = filteredProducts.length;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Showing $filteredCount of $totalCount products',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        if (_hasActiveFilters())
-          TextButton(
-            onPressed: () {
-              _searchController.clear();
-              setState(() {
-                searchQuery = '';
-                selectedCategory = 'All';
-                minPrice = 0;
-                maxPrice = 10000;
-                selectedCity = 'All Cities';
-              });
-            },
-            child: const Text(
-              'Clear All',
-              style: TextStyle(
-                color: Color(0xFF00C853),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   Widget _buildFilterButton() {
     return GestureDetector(
       onTap: _showFilterDialog,
@@ -705,6 +731,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       minPrice = tempMinPrice;
                       maxPrice = tempMaxPrice;
                       selectedCity = tempSelectedCity;
+                      _resetPagination();
                     });
                     Navigator.of(context).pop();
                   },
@@ -735,6 +762,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 onTap: () async {
                   setState(() {
                     selectedCategory = category;
+                    _resetPagination();
                   });
                   await _loadProducts();
                 },
@@ -744,7 +772,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF32CD32) : Colors.white,
+                    color: isSelected ? const Color(0xFF00C853) : Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
@@ -807,14 +835,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Widget _buildProductCard(model.Product product) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate responsive dimensions based on card width
-        final cardWidth = constraints.maxWidth;
-        final imageHeight = cardWidth * 0.70; // Slightly reduced for mobile
-        final fontSize = cardWidth > 150 ? 15.0 : 12.0;
-        final priceFontSize = cardWidth > 150 ? 16.0 : 13.0;
-        final iconSize = cardWidth > 150 ? 18.0 : 14.0;
-        final padding = cardWidth > 150 ? 12.0 : 6.0;
-
         return GestureDetector(
           onTap: () {
             Navigator.push(
@@ -823,11 +843,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 builder:
                     (context) => ProductDetailsScreen(
                       product: {
+                        'id': product.id,
                         'name': product.name,
                         'price': product.price,
-                        'image': product.imageUrl ?? 'assets/images/dap.webp',
+                        'imageUrl': product.imageUrl,
                         'weight': 50,
+                        'category': product.category,
                         'description': product.description,
+                        'sellerId':
+                            product
+                                .sellerId, // CRITICAL: Pass sellerId to details screen
                         'sellerName': product.sellerName ?? '',
                         'sellerPhone': product.sellerPhone ?? '',
                         'sellerLocation': product.sellerLocation ?? '',
@@ -839,189 +864,160 @@ class _ProductsScreenState extends State<ProductsScreen> {
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
-                // Image section with overlay icons
-                Stack(
-                  children: [
-                    Container(
-                      height: imageHeight,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
+                // Full-width image section
+                Expanded(
+                  flex: 6,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
                         ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(padding),
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
                           child: _buildProductImage(product),
                         ),
                       ),
-                    ),
-                    // TTS Icon
-                    Positioned(
-                      top: 6,
-                      right: 6,
-                      child: GestureDetector(
-                        onTap: () async {
-                          final text =
-                              '${product.name}. Price: ${product.price.toStringAsFixed(0)} rupees. Category: ${product.category}';
-                          await TtsService.instance.speak(text);
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(padding * 0.5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.volume_up,
-                            size: iconSize,
-                            color: const Color(0xFF00C853),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Category badge
-                    Positioned(
-                      top: 6,
-                      left: 6,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: padding * 0.67,
-                          vertical: padding * 0.33,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF00C853).withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          product.category,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: cardWidth > 150 ? 10 : 8,
-                            fontWeight: FontWeight.bold,
+                      // TTS Icon
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: () async {
+                            final text =
+                                '${product.name}. Price: ${product.price.toStringAsFixed(0)} rupees. Category: ${product.category}';
+                            await TtsService.instance.speak(text);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.95),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 6,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.volume_up,
+                              size: 16,
+                              color: Color(0xFF00C853),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 // Product details section
-                Padding(
-                  padding: EdgeInsets.all(padding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Product name
-                      Text(
-                        product.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: fontSize,
-                          color: Colors.black87,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: padding * 0.33),
-                      // Seller info and location
-                      if (product.sellerLocation != null &&
-                          product.sellerLocation!.isNotEmpty)
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: cardWidth > 150 ? 12 : 9,
-                              color: Colors.grey[600],
+                Expanded(
+                  flex: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Product name
+                        Flexible(
+                          child: Text(
+                            product.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: Colors.black87,
+                              height: 1.2,
                             ),
-                            const SizedBox(width: 3),
-                            Expanded(
-                              child: Text(
-                                product.sellerLocation!,
-                                style: TextStyle(
-                                  fontSize: cardWidth > 150 ? 11 : 8,
-                                  color: Colors.grey[600],
-                                  height: 1.2,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      if (product.sellerLocation != null &&
-                          product.sellerLocation!.isNotEmpty)
-                        SizedBox(height: padding * 0.33),
-                      // Price and add button row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Price
+                        const SizedBox(height: 3),
+                        // Seller name
+                        if (product.sellerName != null &&
+                            product.sellerName!.isNotEmpty)
                           Flexible(
                             child: Text(
-                              'Rs. ${product.price.toStringAsFixed(0)}',
+                              product.sellerName!,
                               style: TextStyle(
-                                color: const Color(0xFF00C853),
-                                fontSize: priceFontSize,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                                height: 1.2,
                               ),
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          SizedBox(width: padding * 0.5),
-                          // Add to cart button
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF00C853), Color(0xFF00E676)],
+                        const Spacer(),
+                        // Price and cart icon row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Price
+                            Expanded(
+                              child: Text(
+                                'Rs. ${product.price.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  color: Color(0xFF00C853),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () => _addToCart(product),
+                            // Add to cart button
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF00C853),
+                                    Color(0xFF00E676),
+                                  ],
+                                ),
                                 borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: EdgeInsets.all(padding * 0.5),
-                                  child: Icon(
-                                    Icons.add_shopping_cart,
-                                    size: iconSize,
-                                    color: Colors.white,
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => _addToCart(product),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: Icon(
+                                      Icons.shopping_cart,
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1032,19 +1028,114 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
   }
 
+  Widget _buildPaginationControls() {
+    if (totalPages <= 1) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Previous Button
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: currentPage > 1 ? _previousPage : null,
+              icon: const Icon(Icons.arrow_back_ios, size: 16),
+              label: const Text(
+                'Previous',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    currentPage > 1
+                        ? const Color(0xFF00C853)
+                        : Colors.grey.shade300,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: currentPage > 1 ? 2 : 0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Page Indicator
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF00C853), Color(0xFF00E676)],
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '$currentPage / $totalPages',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Next Button
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: currentPage < totalPages ? _nextPage : null,
+              label: const Text(
+                'Next',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              icon: const Icon(Icons.arrow_forward_ios, size: 16),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    currentPage < totalPages
+                        ? const Color(0xFF00C853)
+                        : Colors.grey.shade300,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: currentPage < totalPages ? 2 : 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProductImage(model.Product product) {
     final imageUrl = product.imageUrl;
 
     // If no image URL, show default icon
     if (imageUrl == null || imageUrl.isEmpty) {
-      return Icon(Icons.grass, size: 50, color: Colors.green[300]);
+      return Center(
+        child: Icon(Icons.grass, size: 50, color: Colors.green[300]),
+      );
     }
 
     // If it's a Firebase Storage URL or any http URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return Image.network(
         imageUrl,
-        fit: BoxFit.contain,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Center(
@@ -1061,16 +1152,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
         },
         errorBuilder: (context, error, stackTrace) {
           debugPrint('Error loading image: $error');
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.broken_image, size: 40, color: Colors.grey[400]),
-              const SizedBox(height: 4),
-              Text(
-                'Image unavailable',
-                style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-              ),
-            ],
+          return Center(
+            child: Icon(Icons.grass, size: 50, color: Colors.green[300]),
           );
         },
       );
@@ -1079,9 +1162,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
     // If it's an asset path
     return Image.asset(
       imageUrl,
-      fit: BoxFit.contain,
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
-        return Icon(Icons.grass, size: 50, color: Colors.green[300]);
+        return Center(
+          child: Icon(Icons.grass, size: 50, color: Colors.green[300]),
+        );
       },
     );
   }

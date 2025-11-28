@@ -35,7 +35,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[800],
+                  color: const Color(0xFF00C853),
                 ),
               ),
               const SizedBox(height: 10),
@@ -80,9 +80,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 obscureText: obscureNew,
                 decoration: InputDecoration(
                   labelText: "New Password",
+                  prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      obscureNew ? Icons.visibility_off : Icons.visibility,
+                      obscureNew
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: Colors.grey[600],
                     ),
                     onPressed: () => setState(() => obscureNew = !obscureNew),
                   ),
@@ -99,9 +103,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 obscureText: obscureConfirm,
                 decoration: InputDecoration(
                   labelText: "Confirm Password",
+                  prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                      obscureConfirm
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: Colors.grey[600],
                     ),
                     onPressed:
                         () => setState(() => obscureConfirm = !obscureConfirm),
@@ -119,7 +127,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.green[700],
+                    backgroundColor: const Color(0xFF00C853),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

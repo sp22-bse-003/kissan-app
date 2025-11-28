@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -92,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[800],
+                  color: const Color(0xFF00C853),
                 ),
               ),
               const SizedBox(height: 10),
@@ -118,10 +119,23 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: AppLocalizations.of(context)!.password,
                   prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: Colors.grey[600],
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -141,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: Text(
                     AppLocalizations.of(context)!.forgotPasswordQ,
-                    style: GoogleFonts.poppins(color: Colors.green),
+                    style: GoogleFonts.poppins(color: const Color(0xFF00C853)),
                   ),
                 ),
               ),
@@ -169,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.green[700],
+                    backgroundColor: const Color(0xFF00C853),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -214,7 +228,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: Text(
                       AppLocalizations.of(context)!.signUp,
-                      style: GoogleFonts.poppins(color: Colors.green[800]),
+                      style: GoogleFonts.poppins(
+                        color: const Color(0xFF00C853),
+                      ),
                     ),
                   ),
                 ],

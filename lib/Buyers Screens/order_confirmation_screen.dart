@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kissan/core/models/cart_item.dart';
 import 'package:kissan/core/models/order.dart' as order_model;
@@ -54,12 +55,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       _isProcessing = true;
     });
 
-    // Create order products with dummy seller IDs
+    // Create order products with seller IDs from cart items
     final orderProducts =
         widget.selectedItems.map((item) {
           return order_model.OrderProduct(
-            productId:
-                item.id ?? 'product_${DateTime.now().millisecondsSinceEpoch}',
+            productId: item.productId, // Use actual product ID, not cart item ID
             productName: item.productName,
             productBrand: item.productBrand,
             productWeight: item.productWeight,
@@ -67,7 +67,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             productImageUrl: item.productImageUrl,
             quantity: item.quantity,
             sellerId:
-                'seller_${(item.productName.hashCode % 5) + 1}', // Dummy seller ID
+                item.sellerId ??
+                'unknown_seller', // Use real seller ID from product
           );
         }).toList();
 
